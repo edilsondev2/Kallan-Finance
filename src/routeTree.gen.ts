@@ -10,33 +10,192 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AuthenticatedAppRouteRouteImport } from './routes/_authenticated/_app/route'
+import { Route as AuthenticatedAppCarteiraRouteImport } from './routes/_authenticated/_app/carteira'
+import { Route as AuthenticatedAppComunidadeRouteImport } from './routes/_authenticated/_app/comunidade'
+import { Route as AuthenticatedAppConfiguracoesRouteImport } from './routes/_authenticated/_app/configuracoes'
+import { Route as AuthenticatedAppInicioRouteImport } from './routes/_authenticated/_app/inicio'
+import { Route as AuthenticatedAppInteligenciaRouteImport } from './routes/_authenticated/_app/inteligencia'
+import { Route as AuthenticatedAppMetasRouteImport } from './routes/_authenticated/_app/metas'
+import { Route as AuthenticatedAppMovimentacoesRouteImport } from './routes/_authenticated/_app/movimentacoes'
+import { Route as AuthenticatedAppNegociosRouteImport } from './routes/_authenticated/_app/negocios'
+import { Route as AuthenticatedAppNotificacoesRouteImport } from './routes/_authenticated/_app/notificacoes'
+import { Route as AuthenticatedAppOpenFinanceRouteImport } from './routes/_authenticated/_app/open-finance'
+import { Route as AuthenticatedAppPerfilRouteImport } from './routes/_authenticated/_app/perfil'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedAppRouteRoute = AuthenticatedAppRouteRouteImport.update({
+  id: '/_app',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAppCarteiraRoute =
+  AuthenticatedAppCarteiraRouteImport.update({
+    id: '/carteira',
+    path: '/carteira',
+    getParentRoute: () => AuthenticatedAppRouteRoute,
+  } as any)
+const AuthenticatedAppComunidadeRoute =
+  AuthenticatedAppComunidadeRouteImport.update({
+    id: '/comunidade',
+    path: '/comunidade',
+    getParentRoute: () => AuthenticatedAppRouteRoute,
+  } as any)
+const AuthenticatedAppConfiguracoesRoute =
+  AuthenticatedAppConfiguracoesRouteImport.update({
+    id: '/configuracoes',
+    path: '/configuracoes',
+    getParentRoute: () => AuthenticatedAppRouteRoute,
+  } as any)
+const AuthenticatedAppInicioRoute = AuthenticatedAppInicioRouteImport.update({
+  id: '/inicio',
+  path: '/inicio',
+  getParentRoute: () => AuthenticatedAppRouteRoute,
+} as any)
+const AuthenticatedAppInteligenciaRoute =
+  AuthenticatedAppInteligenciaRouteImport.update({
+    id: '/inteligencia',
+    path: '/inteligencia',
+    getParentRoute: () => AuthenticatedAppRouteRoute,
+  } as any)
+const AuthenticatedAppMetasRoute = AuthenticatedAppMetasRouteImport.update({
+  id: '/metas',
+  path: '/metas',
+  getParentRoute: () => AuthenticatedAppRouteRoute,
+} as any)
+const AuthenticatedAppMovimentacoesRoute =
+  AuthenticatedAppMovimentacoesRouteImport.update({
+    id: '/movimentacoes',
+    path: '/movimentacoes',
+    getParentRoute: () => AuthenticatedAppRouteRoute,
+  } as any)
+const AuthenticatedAppNegociosRoute =
+  AuthenticatedAppNegociosRouteImport.update({
+    id: '/negocios',
+    path: '/negocios',
+    getParentRoute: () => AuthenticatedAppRouteRoute,
+  } as any)
+const AuthenticatedAppNotificacoesRoute =
+  AuthenticatedAppNotificacoesRouteImport.update({
+    id: '/notificacoes',
+    path: '/notificacoes',
+    getParentRoute: () => AuthenticatedAppRouteRoute,
+  } as any)
+const AuthenticatedAppOpenFinanceRoute =
+  AuthenticatedAppOpenFinanceRouteImport.update({
+    id: '/open-finance',
+    path: '/open-finance',
+    getParentRoute: () => AuthenticatedAppRouteRoute,
+  } as any)
+const AuthenticatedAppPerfilRoute = AuthenticatedAppPerfilRouteImport.update({
+  id: '/perfil',
+  path: '/perfil',
+  getParentRoute: () => AuthenticatedAppRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/carteira': typeof AuthenticatedAppCarteiraRoute
+  '/comunidade': typeof AuthenticatedAppComunidadeRoute
+  '/configuracoes': typeof AuthenticatedAppConfiguracoesRoute
+  '/inicio': typeof AuthenticatedAppInicioRoute
+  '/inteligencia': typeof AuthenticatedAppInteligenciaRoute
+  '/metas': typeof AuthenticatedAppMetasRoute
+  '/movimentacoes': typeof AuthenticatedAppMovimentacoesRoute
+  '/negocios': typeof AuthenticatedAppNegociosRoute
+  '/notificacoes': typeof AuthenticatedAppNotificacoesRoute
+  '/open-finance': typeof AuthenticatedAppOpenFinanceRoute
+  '/perfil': typeof AuthenticatedAppPerfilRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/carteira': typeof AuthenticatedAppCarteiraRoute
+  '/comunidade': typeof AuthenticatedAppComunidadeRoute
+  '/configuracoes': typeof AuthenticatedAppConfiguracoesRoute
+  '/inicio': typeof AuthenticatedAppInicioRoute
+  '/inteligencia': typeof AuthenticatedAppInteligenciaRoute
+  '/metas': typeof AuthenticatedAppMetasRoute
+  '/movimentacoes': typeof AuthenticatedAppMovimentacoesRoute
+  '/negocios': typeof AuthenticatedAppNegociosRoute
+  '/notificacoes': typeof AuthenticatedAppNotificacoesRoute
+  '/open-finance': typeof AuthenticatedAppOpenFinanceRoute
+  '/perfil': typeof AuthenticatedAppPerfilRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/_authenticated/_app': typeof AuthenticatedAppRouteRouteWithChildren
+  '/_authenticated/_app/carteira': typeof AuthenticatedAppCarteiraRoute
+  '/_authenticated/_app/comunidade': typeof AuthenticatedAppComunidadeRoute
+  '/_authenticated/_app/configuracoes': typeof AuthenticatedAppConfiguracoesRoute
+  '/_authenticated/_app/inicio': typeof AuthenticatedAppInicioRoute
+  '/_authenticated/_app/inteligencia': typeof AuthenticatedAppInteligenciaRoute
+  '/_authenticated/_app/metas': typeof AuthenticatedAppMetasRoute
+  '/_authenticated/_app/movimentacoes': typeof AuthenticatedAppMovimentacoesRoute
+  '/_authenticated/_app/negocios': typeof AuthenticatedAppNegociosRoute
+  '/_authenticated/_app/notificacoes': typeof AuthenticatedAppNotificacoesRoute
+  '/_authenticated/_app/open-finance': typeof AuthenticatedAppOpenFinanceRoute
+  '/_authenticated/_app/perfil': typeof AuthenticatedAppPerfilRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/carteira'
+    | '/comunidade'
+    | '/configuracoes'
+    | '/inicio'
+    | '/inteligencia'
+    | '/metas'
+    | '/movimentacoes'
+    | '/negocios'
+    | '/notificacoes'
+    | '/open-finance'
+    | '/perfil'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/carteira'
+    | '/comunidade'
+    | '/configuracoes'
+    | '/inicio'
+    | '/inteligencia'
+    | '/metas'
+    | '/movimentacoes'
+    | '/negocios'
+    | '/notificacoes'
+    | '/open-finance'
+    | '/perfil'
+  id:
+    | '__root__'
+    | '/'
+    | '/_authenticated'
+    | '/_authenticated/_app'
+    | '/_authenticated/_app/carteira'
+    | '/_authenticated/_app/comunidade'
+    | '/_authenticated/_app/configuracoes'
+    | '/_authenticated/_app/inicio'
+    | '/_authenticated/_app/inteligencia'
+    | '/_authenticated/_app/metas'
+    | '/_authenticated/_app/movimentacoes'
+    | '/_authenticated/_app/negocios'
+    | '/_authenticated/_app/notificacoes'
+    | '/_authenticated/_app/open-finance'
+    | '/_authenticated/_app/perfil'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +207,147 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/_app': {
+      id: '/_authenticated/_app'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedAppRouteRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/_app/carteira': {
+      id: '/_authenticated/_app/carteira'
+      path: '/carteira'
+      fullPath: '/carteira'
+      preLoaderRoute: typeof AuthenticatedAppCarteiraRouteImport
+      parentRoute: typeof AuthenticatedAppRouteRoute
+    }
+    '/_authenticated/_app/comunidade': {
+      id: '/_authenticated/_app/comunidade'
+      path: '/comunidade'
+      fullPath: '/comunidade'
+      preLoaderRoute: typeof AuthenticatedAppComunidadeRouteImport
+      parentRoute: typeof AuthenticatedAppRouteRoute
+    }
+    '/_authenticated/_app/configuracoes': {
+      id: '/_authenticated/_app/configuracoes'
+      path: '/configuracoes'
+      fullPath: '/configuracoes'
+      preLoaderRoute: typeof AuthenticatedAppConfiguracoesRouteImport
+      parentRoute: typeof AuthenticatedAppRouteRoute
+    }
+    '/_authenticated/_app/inicio': {
+      id: '/_authenticated/_app/inicio'
+      path: '/inicio'
+      fullPath: '/inicio'
+      preLoaderRoute: typeof AuthenticatedAppInicioRouteImport
+      parentRoute: typeof AuthenticatedAppRouteRoute
+    }
+    '/_authenticated/_app/inteligencia': {
+      id: '/_authenticated/_app/inteligencia'
+      path: '/inteligencia'
+      fullPath: '/inteligencia'
+      preLoaderRoute: typeof AuthenticatedAppInteligenciaRouteImport
+      parentRoute: typeof AuthenticatedAppRouteRoute
+    }
+    '/_authenticated/_app/metas': {
+      id: '/_authenticated/_app/metas'
+      path: '/metas'
+      fullPath: '/metas'
+      preLoaderRoute: typeof AuthenticatedAppMetasRouteImport
+      parentRoute: typeof AuthenticatedAppRouteRoute
+    }
+    '/_authenticated/_app/movimentacoes': {
+      id: '/_authenticated/_app/movimentacoes'
+      path: '/movimentacoes'
+      fullPath: '/movimentacoes'
+      preLoaderRoute: typeof AuthenticatedAppMovimentacoesRouteImport
+      parentRoute: typeof AuthenticatedAppRouteRoute
+    }
+    '/_authenticated/_app/negocios': {
+      id: '/_authenticated/_app/negocios'
+      path: '/negocios'
+      fullPath: '/negocios'
+      preLoaderRoute: typeof AuthenticatedAppNegociosRouteImport
+      parentRoute: typeof AuthenticatedAppRouteRoute
+    }
+    '/_authenticated/_app/notificacoes': {
+      id: '/_authenticated/_app/notificacoes'
+      path: '/notificacoes'
+      fullPath: '/notificacoes'
+      preLoaderRoute: typeof AuthenticatedAppNotificacoesRouteImport
+      parentRoute: typeof AuthenticatedAppRouteRoute
+    }
+    '/_authenticated/_app/open-finance': {
+      id: '/_authenticated/_app/open-finance'
+      path: '/open-finance'
+      fullPath: '/open-finance'
+      preLoaderRoute: typeof AuthenticatedAppOpenFinanceRouteImport
+      parentRoute: typeof AuthenticatedAppRouteRoute
+    }
+    '/_authenticated/_app/perfil': {
+      id: '/_authenticated/_app/perfil'
+      path: '/perfil'
+      fullPath: '/perfil'
+      preLoaderRoute: typeof AuthenticatedAppPerfilRouteImport
+      parentRoute: typeof AuthenticatedAppRouteRoute
+    }
   }
 }
 
+interface AuthenticatedAppRouteRouteChildren {
+  AuthenticatedAppCarteiraRoute: typeof AuthenticatedAppCarteiraRoute
+  AuthenticatedAppComunidadeRoute: typeof AuthenticatedAppComunidadeRoute
+  AuthenticatedAppConfiguracoesRoute: typeof AuthenticatedAppConfiguracoesRoute
+  AuthenticatedAppInicioRoute: typeof AuthenticatedAppInicioRoute
+  AuthenticatedAppInteligenciaRoute: typeof AuthenticatedAppInteligenciaRoute
+  AuthenticatedAppMetasRoute: typeof AuthenticatedAppMetasRoute
+  AuthenticatedAppMovimentacoesRoute: typeof AuthenticatedAppMovimentacoesRoute
+  AuthenticatedAppNegociosRoute: typeof AuthenticatedAppNegociosRoute
+  AuthenticatedAppNotificacoesRoute: typeof AuthenticatedAppNotificacoesRoute
+  AuthenticatedAppOpenFinanceRoute: typeof AuthenticatedAppOpenFinanceRoute
+  AuthenticatedAppPerfilRoute: typeof AuthenticatedAppPerfilRoute
+}
+
+const AuthenticatedAppRouteRouteChildren: AuthenticatedAppRouteRouteChildren = {
+  AuthenticatedAppCarteiraRoute: AuthenticatedAppCarteiraRoute,
+  AuthenticatedAppComunidadeRoute: AuthenticatedAppComunidadeRoute,
+  AuthenticatedAppConfiguracoesRoute: AuthenticatedAppConfiguracoesRoute,
+  AuthenticatedAppInicioRoute: AuthenticatedAppInicioRoute,
+  AuthenticatedAppInteligenciaRoute: AuthenticatedAppInteligenciaRoute,
+  AuthenticatedAppMetasRoute: AuthenticatedAppMetasRoute,
+  AuthenticatedAppMovimentacoesRoute: AuthenticatedAppMovimentacoesRoute,
+  AuthenticatedAppNegociosRoute: AuthenticatedAppNegociosRoute,
+  AuthenticatedAppNotificacoesRoute: AuthenticatedAppNotificacoesRoute,
+  AuthenticatedAppOpenFinanceRoute: AuthenticatedAppOpenFinanceRoute,
+  AuthenticatedAppPerfilRoute: AuthenticatedAppPerfilRoute,
+}
+
+const AuthenticatedAppRouteRouteWithChildren =
+  AuthenticatedAppRouteRoute._addFileChildren(
+    AuthenticatedAppRouteRouteChildren,
+  )
+
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAppRouteRoute: typeof AuthenticatedAppRouteRouteWithChildren
+}
+
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAppRouteRoute: AuthenticatedAppRouteRouteWithChildren,
+}
+
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
