@@ -2,7 +2,7 @@ import { initials } from "@/lib/format";
 import { useSignedImage } from "@/lib/storage";
 import { cn } from "@/lib/utils";
 
-export function UserAvatar({ name, path, className }: { name?: string | null; path?: string | null; className?: string }) {
+export function UserAvatar({ name, path, className }: { name?: string | null | undefined; path?: string | null | undefined; className?: string | undefined }) {
   const { data: url } = useSignedImage(path);
   return (
     <span
