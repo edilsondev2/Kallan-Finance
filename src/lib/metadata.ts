@@ -1,5 +1,5 @@
 export function pageHead(title: string, description: string) {
-  const fullTitle = `${title} — Kallan Finance`;
+  const fullTitle = title === 'Kallan Finance' ? title : `${title} — Kallan Finance`;
   return { meta: [
     { title: fullTitle }, { name: 'description', content: description },
     { property: 'og:title', content: fullTitle }, { property: 'og:description', content: description },

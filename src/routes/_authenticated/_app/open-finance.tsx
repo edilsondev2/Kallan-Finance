@@ -1,11 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Page, PageHeader } from "@/components/kallan/page";
+import { ConnectionsPage } from "@/modules/open-finance/connections-page";
+import { pageHead } from "@/lib/metadata";
 
 export const Route = createFileRoute("/_authenticated/_app/open-finance")({
-  head: () => ({ meta: [{ title: "Open Finance — Kallan Finance" }] }),
-  component: () => (
-    <Page>
-      <PageHeader title="Open Finance" />
-    </Page>
-  ),
+  head: () => pageHead("Open Finance", "Conexões bancárias somente para leitura com consentimento oficial."),
+  component: ConnectionsPage,
 });

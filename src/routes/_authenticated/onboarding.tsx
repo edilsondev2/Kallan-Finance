@@ -14,6 +14,10 @@ export const Route = createFileRoute("/_authenticated/onboarding")({
     meta: [
       { title: "Boas-vindas — Kallan Finance" },
       { name: "description", content: "Personalize sua experiência no Kallan Finance." },
+      { property: "og:title", content: "Boas-vindas — Kallan Finance" },
+      { property: "og:description", content: "Escolha seu principal objetivo financeiro no Kallan Finance." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: Onboarding,

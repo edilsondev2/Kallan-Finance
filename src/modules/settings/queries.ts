@@ -46,7 +46,10 @@ export function useUpdateSettings() {
       if (error) throw error;
       return data;
     },
-    onSuccess: (data) => qc.setQueryData(["settings", userId], data),
+    onSuccess: (data) => {
+      qc.setQueryData(["settings", userId], data);
+      void qc.invalidateQueries({ queryKey: ["account-panel", userId] });
+    },
   });
 }
 
@@ -63,7 +66,8 @@ export function useProfile(id: string | undefined) {
     queryKey: ["profile", id],
     enabled: !!id,
     queryFn: async () => {
-      const { data, error } = await supabase.from("profiles").select("*").eq("id", id!).single();
+      if (!id) throw new Error("Perfil não disponível.");
+      const { data, error } = await supabase.from("profiles").select("*").eq("id", id).single();
       if (error) throw error;
       return data;
     },
@@ -84,7 +88,10 @@ export function useUpdateProfile() {
       if (error) throw error;
       return data;
     },
-    onSuccess: (data) => qc.setQueryData(["profile", userId], data),
+    onSuccess: (data) => {
+      qc.setQueryData(["profile", userId], data);
+      void qc.invalidateQueries({ queryKey: ["account-panel", userId] });
+    },
   });
 }
 

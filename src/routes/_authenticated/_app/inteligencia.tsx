@@ -1,11 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Page, PageHeader } from "@/components/kallan/page";
+import { DiagnosticsPage } from "@/modules/intelligence/diagnostics-page";
+import { financeQueryOptions } from "@/modules/finance/queries";
+import { FinanceError, FinanceNotFound, FinancePending } from "@/modules/finance/components/route-states";
+import { pageHead } from "@/lib/metadata";
 
 export const Route = createFileRoute("/_authenticated/_app/inteligencia")({
-  head: () => ({ meta: [{ title: "Kallan Intelligence — Kallan Finance" }] }),
-  component: () => (
-    <Page>
-      <PageHeader title="Kallan Intelligence" />
-    </Page>
-  ),
+  head: () => pageHead("Kallan Intelligence", "Diagnósticos e interpretação de suas finanças no Kallan Finance."),
+  loader: ({context}) => context.queryClient.ensureQueryData(financeQueryOptions(context.user.id)),
+  errorComponent: FinanceError,
+  notFoundComponent: FinanceNotFound,
+  pendingComponent: FinancePending,
+  component: DiagnosticsPage,
 });

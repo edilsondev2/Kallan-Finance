@@ -1,0 +1,21 @@
+import { useState } from 'react';
+import { Link, useNavigate } from '@tanstack/react-router';
+import { useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
+import { Camera, Loader2, Save, Settings, LogOut, ShieldCheck, ArrowRight } from 'lucide-react';
+import { z } from 'zod';
+import { toast } from 'sonner';
+import { Page, PageHeader } from '@/components/kallan/page';
+import { UserAvatar } from '@/components/kallan/user-avatar';
+import { Field } from '@/components/kallan/field';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { signOutEverywhere, useAuth, useUserId } from '@/modules/auth/auth-context';
+import { uploadImage } from '@/lib/storage';
+import { useUpdateProfile } from '../queries';
+import { accountPanelOptions } from '../panel-queries';
+const schema=z.object({display_name:z.string().trim().min(2,'Informe seu nome.').max(80),bio:z.string().trim().max(400),city:z.string().trim().max(80),segment:z.string().trim().max(80)});
+export function ProfilePage(){
+ const userId=useUserId();const {user}=useAuth();const {data}=useSuspenseQuery(accountPanelOptions(userId));const update=useUpdateProfile();const qc=useQueryClient();const navigate=useNavigate();const [uploading,setUploading]=useState(false);const [error,setError]=useState('');
+ async function upload(file:File|undefined){if(!file)return;setUploading(true);setError('');try{const path=await uploadImage(userId,file,'avatars');await update.mutateAsync({avatar_url:path});await qc.invalidateQueries({queryKey:['account-panel']});toast.success('Foto atualizada.');}catch(e){setError(e instanceof Error?e.message:'Não foi possível enviar a foto.');}finally{setUploading(false);}}
+ return <Page><PageHeader title="Seu perfil" eyebrow="Sua identidade, seu espaço" actions={<Button variant="outline" size="icon" asChild title="Configurações"><Link to="/configuracoes" aria-label="Configurações"><Settings/></Link></Button>}/><section className="mb-8 flex items-center gap-5 border-b border-border pb-7"><div className="relative"><UserAvatar name={data.profile.display_name} path={data.profile.avatar_url} className="size-20"/><label className="absolute bottom-0 right-0 flex size-8 cursor-pointer items-center justify-center rounded-full bg-primary text-primary-foreground" title="Alterar foto">{uploading?<Loader2 className="size-4 animate-spin"/>:<Camera className="size-4"/>}<input aria-label="Alterar foto" type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="sr-only" disabled={uploading} onChange={e=>void upload(e.target.files?.[0])}/></label></div><div className="min-w-0"><h2 className="break-words text-xl font-semibold">{data.profile.display_name||'Seu perfil'}</h2><p className="mt-1 truncate text-sm text-muted-foreground">{user?.email}</p><p className="mt-2 text-xs text-primary">Plano gratuito</p></div></section><form className="max-w-xl space-y-5" onSubmit={async e=>{e.preventDefault();setError('');const parsed=schema.safeParse(Object.fromEntries(new FormData(e.currentTarget).entries()));if(!parsed.success){setError(parsed.error.issues[0]?.message??'Verifique os campos.');return;}try{await update.mutateAsync(parsed.data);await qc.invalidateQueries({queryKey:['account-panel']});toast.success('Perfil salvo.');}catch{setError('Não foi possível salvar seu perfil.');}}}>{[['display_name','Nome'],['bio','Sobre você'],['city','Cidade'],['segment','Área de atuação']].map(([key,label])=>key&&<Field key={key} label={label??''} htmlFor={key}><Input id={key} name={key} defaultValue={String(data.profile[key as 'display_name'|'bio'|'city'|'segment']??'')}/></Field>)}{error&&<p role="alert" className="text-sm text-negative">{error}</p>}<Button type="submit" disabled={update.isPending||uploading}>{update.isPending?<Loader2 className="animate-spin"/>:<Save/>} Salvar perfil</Button></form><section className="mt-8 max-w-xl border-t border-border pt-6"><Link to="/open-finance" className="flex items-center gap-3 py-3 text-sm"><ShieldCheck className="size-5 text-primary"/>Conexões e consentimentos<ArrowRight className="ml-auto size-4"/></Link><Button variant="ghost" className="mt-3 px-0 text-negative" onClick={()=>void signOutEverywhere(qc,navigate)}><LogOut/> Sair da conta</Button></section></Page>;
+}

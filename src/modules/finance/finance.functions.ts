@@ -25,6 +25,21 @@ export const getFinance = createServerFn({ method: 'GET' }).middleware([requireS
 
 export const saveFinance = createServerFn({ method:'POST' }).middleware([requireSupabaseAuth]).inputValidator(input => financeMutationSchema.parse(input)).handler(async ({data,context}) => {
   const db = context.supabase; const user_id = context.userId;
+  if (data.entity === 'transaction' && data.category_id) {
+    const category = await db.from('categories').select('id').eq('id',data.category_id).eq('scope','personal').maybeSingle();
+    if(category.error || !category.data) throw new Error('A categoria não está disponível para sua conta.');
+  }
+  if(data.entity === 'transaction' && ((data.type === 'income' && data.direction !== 'in') || (['expense','payment','card_purchase'].includes(data.type) && data.direction !== 'out'))) {
+    throw new Error('A direção não corresponde ao tipo de movimentação.');
+  }
+  if(data.entity === 'invoice') {
+    const card = await db.from('credit_cards').select('id').eq('id',data.card_id).eq('user_id',user_id).eq('source','manual').maybeSingle();
+    if(card.error || !card.data) throw new Error('Selecione um cartão manual da sua conta.');
+  }
+  if(data.entity === 'contribution') {
+    const goal = await db.from('goals').select('id').eq('id',data.goal_id).eq('user_id',user_id).eq('scope','personal').maybeSingle();
+    if(goal.error || !goal.data) throw new Error('A meta não está disponível para sua conta.');
+  }
   let result;
   switch(data.entity) {
     case 'transaction': { const row = { description:data.description, amount:data.amount, occurred_on:data.occurred_on, type:data.type, direction:data.direction, category_id:data.category_id, institution_name:data.institution_name || null, notes:data.notes || null };

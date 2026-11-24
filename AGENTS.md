@@ -47,3 +47,9 @@ use the editor.
 
 ## TypeScript
 - tsconfig uses exactOptionalPropertyTypes / noUncheckedIndexedAccess / noPropertyAccessFromIndexSignature: optional props that may receive undefined must be typed `?: T | undefined`; guard indexed reads.
+
+## Data loading and editing
+- Private initial reads use authenticated server functions, user-scoped Query options, route cache priming and suspense subscriptions; this keeps private reads behind server auth and totals consistent.
+- Financial forms validate shared discriminated schemas and use authenticated server mutations with explicit owner/source filtering; this prevents demo and imported rows from entering manual write paths.
+- Financial history is paginated until exhausted before computing aggregates; this avoids silently truncated totals.
+- Shared labeled inputs and selectors live in `src/components/kallan/field.tsx`; this preserves accessible, consistent forms.
