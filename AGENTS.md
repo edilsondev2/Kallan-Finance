@@ -53,3 +53,5 @@ use the editor.
 - Financial forms validate shared discriminated schemas and use authenticated server mutations with explicit owner/source filtering; this prevents demo and imported rows from entering manual write paths.
 - Financial history is paginated until exhausted before computing aggregates; this avoids silently truncated totals.
 - Shared labeled inputs and selectors live in `src/components/kallan/field.tsx`; this preserves accessible, consistent forms.
+- RLS must validate the ownership and scope of referenced private records on insert and update; checking only the row's user ID does not protect relationships.
+- Permission regression tests execute actual migrations in in-memory PostgreSQL with test-only auth/storage stubs; this covers direct data-access bypasses without creating application accounts or persisting fixtures.

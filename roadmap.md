@@ -1,5 +1,6 @@
 # Kallan Finance — Roadmap
 
+- [x] Revisão de integridade — políticas aplicadas para vínculos financeiros e de análises privadas; 23 testes PostgreSQL isolados verificaram rejeições entre proprietários e recálculo das metas, sem criar contas no app.
 - [x] Retomada — Página pública Kallan Finance no lugar do modelo padrão; abertura de cadastro verificada em computador/celular.
 - [x] Experiência financeira implementada — Início, gráficos, movimentações com pesquisa/filtros/detalhes, contas, cartões, faturas, investimentos, categorias, metas e progresso manual.
 - [x] Perfil, foto privada, configurações, notificações e diagnósticos determinísticos implementados.

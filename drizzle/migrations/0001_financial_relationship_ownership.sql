@@ -1,0 +1,27 @@
+ALTER POLICY "Own accounts insert" ON public.accounts WITH CHECK (user_id = auth.uid() AND source = 'manual' AND connection_id IS NULL AND external_id IS NULL);
+ALTER POLICY "Own accounts update" ON public.accounts USING (user_id = auth.uid() AND source = 'manual') WITH CHECK (user_id = auth.uid() AND source = 'manual' AND connection_id IS NULL AND external_id IS NULL);
+ALTER POLICY "Own cards insert" ON public.credit_cards WITH CHECK (user_id = auth.uid() AND source = 'manual' AND connection_id IS NULL AND external_id IS NULL);
+ALTER POLICY "Own cards update" ON public.credit_cards USING (user_id = auth.uid() AND source = 'manual') WITH CHECK (user_id = auth.uid() AND source = 'manual' AND connection_id IS NULL AND external_id IS NULL);
+ALTER POLICY "Own investments insert" ON public.investments WITH CHECK (user_id = auth.uid() AND source = 'manual' AND connection_id IS NULL AND external_id IS NULL);
+ALTER POLICY "Own investments update" ON public.investments USING (user_id = auth.uid() AND source = 'manual') WITH CHECK (user_id = auth.uid() AND source = 'manual' AND connection_id IS NULL AND external_id IS NULL);
+ALTER POLICY "Own tx insert" ON public.transactions WITH CHECK (
+ user_id = auth.uid() AND source = 'manual' AND external_id IS NULL
+ AND (account_id IS NULL OR EXISTS (SELECT 1 FROM public.accounts a WHERE a.id = transactions.account_id AND a.user_id = auth.uid()))
+ AND (card_id IS NULL OR EXISTS (SELECT 1 FROM public.credit_cards c WHERE c.id = transactions.card_id AND c.user_id = auth.uid()))
+ AND (category_id IS NULL OR EXISTS (SELECT 1 FROM public.categories c WHERE c.id = transactions.category_id AND (c.user_id IS NULL OR c.user_id = auth.uid()) AND c.scope = 'personal' AND c.business_id IS NULL))
+);
+ALTER POLICY "Own tx update" ON public.transactions USING (user_id = auth.uid() AND source = 'manual') WITH CHECK (
+ user_id = auth.uid() AND source = 'manual' AND external_id IS NULL
+ AND (account_id IS NULL OR EXISTS (SELECT 1 FROM public.accounts a WHERE a.id = transactions.account_id AND a.user_id = auth.uid()))
+ AND (card_id IS NULL OR EXISTS (SELECT 1 FROM public.credit_cards c WHERE c.id = transactions.card_id AND c.user_id = auth.uid()))
+ AND (category_id IS NULL OR EXISTS (SELECT 1 FROM public.categories c WHERE c.id = transactions.category_id AND (c.user_id IS NULL OR c.user_id = auth.uid()) AND c.scope = 'personal' AND c.business_id IS NULL))
+);
+ALTER POLICY "Own invoices insert" ON public.card_invoices WITH CHECK (user_id = auth.uid() AND source = 'manual' AND external_id IS NULL AND EXISTS (SELECT 1 FROM public.credit_cards c WHERE c.id = card_invoices.card_id AND c.user_id = auth.uid()));
+ALTER POLICY "Own invoices update" ON public.card_invoices USING (user_id = auth.uid() AND source = 'manual') WITH CHECK (user_id = auth.uid() AND source = 'manual' AND external_id IS NULL AND EXISTS (SELECT 1 FROM public.credit_cards c WHERE c.id = card_invoices.card_id AND c.user_id = auth.uid()));
+ALTER POLICY "Own categories insert" ON public.categories WITH CHECK (user_id = auth.uid() AND ((scope = 'personal' AND business_id IS NULL) OR (scope = 'business' AND (business_id IS NULL OR EXISTS (SELECT 1 FROM public.businesses b WHERE b.id = categories.business_id AND b.owner_id = auth.uid())))));
+ALTER POLICY "Own categories update" ON public.categories USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid() AND ((scope = 'personal' AND business_id IS NULL) OR (scope = 'business' AND (business_id IS NULL OR EXISTS (SELECT 1 FROM public.businesses b WHERE b.id = categories.business_id AND b.owner_id = auth.uid())))));
+ALTER POLICY "Own goals insert" ON public.goals WITH CHECK (user_id = auth.uid() AND current_amount = 0 AND ((scope = 'personal' AND business_id IS NULL) OR (scope = 'business' AND business_id IS NOT NULL AND EXISTS (SELECT 1 FROM public.businesses b WHERE b.id = goals.business_id AND b.owner_id = auth.uid()))));
+ALTER POLICY "Own goals update" ON public.goals USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid() AND ((scope = 'personal' AND business_id IS NULL) OR (scope = 'business' AND business_id IS NOT NULL AND EXISTS (SELECT 1 FROM public.businesses b WHERE b.id = goals.business_id AND b.owner_id = auth.uid()))));
+ALTER POLICY "Own entries insert" ON public.business_entries WITH CHECK (user_id = auth.uid() AND EXISTS (SELECT 1 FROM public.businesses b WHERE b.id = business_entries.business_id AND b.owner_id = auth.uid()) AND (category_id IS NULL OR EXISTS (SELECT 1 FROM public.categories c WHERE c.id = business_entries.category_id AND (c.user_id IS NULL OR c.user_id = auth.uid()) AND c.scope = 'business' AND (c.business_id IS NULL OR c.business_id = business_entries.business_id))));
+ALTER POLICY "Own entries update" ON public.business_entries USING (user_id = auth.uid()) WITH CHECK (user_id = auth.uid() AND EXISTS (SELECT 1 FROM public.businesses b WHERE b.id = business_entries.business_id AND b.owner_id = auth.uid()) AND (category_id IS NULL OR EXISTS (SELECT 1 FROM public.categories c WHERE c.id = business_entries.category_id AND (c.user_id IS NULL OR c.user_id = auth.uid()) AND c.scope = 'business' AND (c.business_id IS NULL OR c.business_id = business_entries.business_id))));
+ALTER POLICY "Own contributions delete" ON public.goal_contributions USING (user_id = auth.uid() AND EXISTS (SELECT 1 FROM public.goals g WHERE g.id = goal_contributions.goal_id AND g.user_id = auth.uid()));
