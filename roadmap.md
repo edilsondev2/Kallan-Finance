@@ -1,5 +1,7 @@
 # Kallan Finance — Roadmap
 
+- [ ] Retomada solicitada: substituir a página inicial padrão, implementar as áreas e validar persistência real.
+
 - [ ] Fase 1 — Fundação: design system, auth (e-mail+senha com confirmação, Google), banco + RLS, navegação
 - [ ] Fase 2 — Início, movimentações, carteira (contas/cartões/investimentos manuais), categorias, metas, perfil
 - [ ] Fase 3 — Kallan Intelligence: chat com IA, diagnósticos determinísticos, agentes, planos de ação

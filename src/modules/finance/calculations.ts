@@ -225,12 +225,13 @@ export function generateInsights(data: Pick<FinanceData, "transactions" | "categ
       });
     }
     const rec = recurringExpenses(data.transactions, ref);
-    if (rec.length >= 2) {
+    const firstRecurring = rec[0];
+    if (rec.length >= 2 && firstRecurring) {
       out.push({
         id: "recurring",
         tone: "neutral",
         title: `Identificamos ${rec.length} despesas que se repetem`,
-        explanation: `Lançamentos como "${rec[0]!.label}" aparecem em vários meses. Revisar assinaturas e cobranças recorrentes ajuda a evitar gastos que passam despercebidos.`,
+        explanation: `Lançamentos como "${firstRecurring.label}" aparecem em vários meses. Revisar assinaturas e cobranças recorrentes ajuda a evitar gastos que passam despercebidos.`,
         link: { to: "/inteligencia", label: "Analisar recorrências" },
       });
     }

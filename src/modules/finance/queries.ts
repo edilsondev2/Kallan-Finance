@@ -1,9 +1,10 @@
-import { useQuery } from "@tanstack/react-query";
+import { queryOptions, useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserId } from "@/modules/auth/auth-context";
 import { useSettings } from "@/modules/settings/queries";
 import { buildDemoData } from "@/modules/demo/demo-data";
 import type { FinanceData, FinanceMode } from "./types";
+import { getFinance } from "./finance.functions";
 
 export const financeKeys = {
   all: (userId: string) => ["finance", userId] as const,
@@ -11,43 +12,19 @@ export const financeKeys = {
 };
 
 /** Loads all personal finance data for the signed-in user (RLS-scoped). */
+export const financeQueryOptions = (userId: string) => queryOptions({
+  queryKey: financeKeys.all(userId),
+  queryFn: () => getFinance(),
+  staleTime: 30_000,
+});
+
 export function useRealFinanceData() {
   const userId = useUserId();
-  return useQuery({
-    queryKey: financeKeys.all(userId),
-    enabled: !!userId,
-    queryFn: async (): Promise<FinanceData> => {
-      const since = new Date();
-      since.setMonth(since.getMonth() - 12);
-      const sinceStr = since.toISOString().slice(0, 10);
-      const [accounts, cards, invoices, investments, transactions, categories, snapshots, goals] = await Promise.all([
-        supabase.from("accounts").select("*").order("created_at"),
-        supabase.from("credit_cards").select("*").order("created_at"),
-        supabase.from("card_invoices").select("*").order("reference_month", { ascending: false }),
-        supabase.from("investments").select("*").order("amount", { ascending: false }),
-        supabase.from("transactions").select("*").gte("occurred_on", sinceStr).order("occurred_on", { ascending: false }).limit(1000),
-        supabase.from("categories").select("*").order("name"),
-        supabase.from("balance_snapshots").select("*").order("captured_at", { ascending: false }).limit(500),
-        supabase.from("goals").select("*").eq("scope", "personal").order("created_at"),
-      ]);
-      const firstError = [accounts, cards, invoices, investments, transactions, categories, snapshots, goals].find((r) => r.error)?.error;
-      if (firstError) throw firstError;
-      return {
-        accounts: accounts.data ?? [],
-        cards: cards.data ?? [],
-        invoices: invoices.data ?? [],
-        investments: investments.data ?? [],
-        transactions: transactions.data ?? [],
-        categories: categories.data ?? [],
-        snapshots: snapshots.data ?? [],
-        goals: goals.data ?? [],
-      };
-    },
-  });
+  return useSuspenseQuery(financeQueryOptions(userId));
 }
 
 export function hasRealData(d: FinanceData) {
-  return d.accounts.length + d.cards.length + d.investments.length + d.transactions.length > 0;
+  return d.accounts.length + d.cards.length + d.investments.length + d.transactions.length + d.goals.length > 0;
 }
 
 /**
