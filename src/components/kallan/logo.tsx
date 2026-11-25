@@ -23,7 +23,7 @@ export function KallanLogo({ className, compact = false }: { className?: string;
       {!compact && (
         <span className="flex flex-col leading-none">
           <span className="font-display text-[15px] font-semibold tracking-[0.22em]">KALLAN</span>
-          <span className="mt-0.5 text-[9px] font-medium tracking-[0.42em] text-primary">FINANCE</span>
+          <span className="mt-0.5 text-[10px] font-semibold tracking-[0.42em] text-primary-glow">FINANCE</span>
         </span>
       )}
     </span>

@@ -45,11 +45,11 @@ export function NotificationBell({ className }: { className?: string }) {
     <Link
       to="/notificacoes"
       aria-label={unread ? `Notificações, ${unread} não lidas` : "Notificações"}
-      className={cn("press relative inline-flex size-10 items-center justify-center rounded-full border border-border bg-surface hover:bg-surface-2", className)}
+      className={cn("press relative inline-flex size-11 items-center justify-center rounded-full border border-border bg-surface hover:bg-surface-2", className)}
     >
       <Bell className="size-[18px]" />
       {unread > 0 && (
-        <span className="absolute -right-0.5 -top-0.5 flex min-w-[18px] items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-foreground">
+        <span className="absolute -right-0.5 -top-0.5 flex min-w-[18px] items-center justify-center rounded-full bg-primary px-1 text-[11px] font-bold text-primary-foreground">
           {unread > 9 ? "9+" : unread}
         </span>
       )}
@@ -84,7 +84,7 @@ function DesktopSidebar() {
           );
         })}
       </nav>
-      <p className="mt-8 px-3 text-[10px] font-medium uppercase tracking-[0.24em] text-muted-foreground/70">Atalhos</p>
+      <p className="text-label mt-8 px-3 text-muted-foreground">Atalhos</p>
       <nav className="mt-2 space-y-0.5" aria-label="Atalhos">
         {SHORTCUTS.map((item) => {
           const active = isActive(pathname, item.to);
@@ -107,7 +107,7 @@ function DesktopSidebar() {
         <UserAvatar name={profile?.display_name} path={profile?.avatar_url} className="size-9" />
         <span className="min-w-0">
           <span className="block truncate text-sm font-medium">{profile?.display_name || "Seu perfil"}</span>
-          <span className="block text-[11px] text-muted-foreground">Plano gratuito</span>
+          <span className="block text-xs text-muted-foreground">Plano gratuito</span>
         </span>
       </Link>
     </aside>
@@ -119,9 +119,9 @@ function MobileBottomNav() {
   return (
     <nav
       aria-label="Principal"
-      className="fixed inset-x-3 bottom-[calc(0.75rem+env(safe-area-inset-bottom))] z-40 lg:hidden"
+      className="glass fixed inset-x-0 bottom-0 z-40 border-x-0 border-b-0 pb-[env(safe-area-inset-bottom)] shadow-float lg:hidden"
     >
-      <div className="glass mx-auto flex max-w-md items-center justify-between rounded-[28px] px-2 py-2 shadow-float">
+      <div className="mx-auto flex max-w-md items-stretch justify-between px-2">
         {PRIMARY_NAV.map((item) => {
           const active = isActive(pathname, item.to);
           return (
@@ -129,17 +129,11 @@ function MobileBottomNav() {
               key={item.to}
               to={item.to}
               aria-current={active ? "page" : undefined}
-              className="press relative flex flex-1 flex-col items-center gap-1 rounded-2xl py-1.5"
+              className="press relative flex min-h-14 flex-1 flex-col items-center justify-center gap-1 py-2"
             >
-              <span
-                className={cn(
-                  "flex h-8 w-12 items-center justify-center rounded-full transition-all duration-300",
-                  active ? "bg-primary text-primary-foreground shadow-glow" : "text-muted-foreground",
-                )}
-              >
-                <item.icon className="size-[18px]" />
-              </span>
-              <span className={cn("text-[10px] font-medium transition-colors", active ? "text-foreground" : "text-muted-foreground")}>
+              {active && <span className="absolute inset-x-5 top-0 h-[3px] rounded-b-full bg-primary" />}
+              <item.icon className={cn("size-[22px] transition-colors", active ? "text-primary-glow" : "text-muted-foreground")} strokeWidth={active ? 2.4 : 1.9} />
+              <span className={cn("text-xs font-medium transition-colors", active ? "text-foreground" : "text-muted-foreground")}>
                 {item.label}
               </span>
             </Link>

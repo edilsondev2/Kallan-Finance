@@ -5,14 +5,20 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * KALLAN FINANCE — design system
- * Deep black + graphite surfaces + emerald accents. Dark-only brand.
+ * KALLAN FINANCE — design system v2
+ *
+ * Principles (see DESIGN.md):
+ *  1. Green is a signal, not decoration: money in, progress, the primary action.
+ *  2. Depth comes from tonal layers (ink -> graphite -> moss), not glows or shadows.
+ *  3. Three surface tiers: hero (one per screen), card, row.
+ *  4. Type does the hierarchy: one family, tabular figures for every amount.
+ *  5. Motion answers a touch; only the page entrance moves on its own.
  */
 
 @theme inline {
-  --font-sans: "Geist", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Geist", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "Geist Mono", ui-monospace, monospace;
+  --font-sans: "Manrope", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Manrope", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
 
   --radius-sm: calc(var(--radius) - 6px);
   --radius-md: calc(var(--radius) - 4px);
@@ -68,28 +74,30 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
-  --animate-rise: rise 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
-  --animate-fade: fade 0.4s ease-out both;
+  --animate-rise: rise 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-fade: fade 0.3s ease-out both;
   --animate-shimmer: shimmer 1.6s linear infinite;
   --animate-glow: glow-pulse 3.2s ease-in-out infinite;
   --animate-orbit: orbit 6s linear infinite;
   --animate-float: float 6s ease-in-out infinite;
-  --animate-bar: bar-grow 1s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-bar: bar-grow 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 :root,
 .dark {
-  --radius: 1rem;
+  /* Tighter radii than v1: 8 / 10 / 14 / 18 / 24 / 30 */
+  --radius: 0.875rem;
   color-scheme: dark;
 
-  --background: oklch(0.14 0.007 157.2); /* #070A08 */
+  /* Tonal layers — every dark carries a touch of green so the black feels like the brand's, not a default */
+  --background: oklch(0.14 0.007 157.2); /* #070A08 ink */
   --foreground: oklch(0.974 0.002 165.1);
-  --surface: oklch(0.197 0.012 155.9); /* #111713 */
-  --surface-2: oklch(0.244 0.018 158.4); /* #19231D */
-  --surface-3: oklch(0.294 0.022 166.7);
+  --surface: oklch(0.197 0.012 155.9); /* #111713 graphite */
+  --surface-2: oklch(0.244 0.018 158.4); /* #19231D moss */
+  --surface-3: oklch(0.3 0.022 160); /* raised / hover / track */
   --card: oklch(0.197 0.012 155.9);
   --card-foreground: oklch(0.974 0.002 165.1);
-  --popover: oklch(0.185 0.011 156);
+  --popover: oklch(0.215 0.014 157);
   --popover-foreground: oklch(0.974 0.002 165.1);
 
   --primary: oklch(0.732 0.177 156.3); /* #00C878 */
@@ -99,21 +107,21 @@
   --secondary: oklch(0.244 0.018 158.4);
   --secondary-foreground: oklch(0.974 0.002 165.1);
   --muted: oklch(0.244 0.018 158.4);
-  --muted-foreground: oklch(0.659 0.015 162.2);
+  --muted-foreground: oklch(0.7 0.014 162); /* AA on surface and surface-2 */
   --accent: oklch(0.27 0.03 158);
   --accent-foreground: oklch(0.974 0.002 165.1);
 
   --positive: oklch(0.836 0.126 156.8);
-  --negative: oklch(0.689 0.2 22.4);
+  --negative: oklch(0.7 0.19 22.4);
   --warning: oklch(0.82 0.15 80);
   --info: oklch(0.75 0.11 230);
   --destructive: oklch(0.65 0.21 24);
   --destructive-foreground: oklch(0.98 0 0);
 
-  --border: oklch(1 0 0 / 7%);
-  --border-strong: oklch(1 0 0 / 14%);
-  --input: oklch(1 0 0 / 10%);
-  --ring: oklch(0.732 0.177 156.3);
+  --border: oklch(1 0 0 / 8%);
+  --border-strong: oklch(1 0 0 / 16%);
+  --input: oklch(1 0 0 / 12%);
+  --ring: oklch(0.815 0.187 155.4);
 
   --chart-1: oklch(0.732 0.177 156.3);
   --chart-2: oklch(0.82 0.15 80);
@@ -122,7 +130,7 @@
   --chart-5: oklch(0.7 0.15 290);
   --chart-6: oklch(0.78 0.14 50);
   --chart-7: oklch(0.8 0.12 190);
-  --chart-8: oklch(0.6 0.02 160);
+  --chart-8: oklch(0.62 0.02 160);
 
   --sidebar: oklch(0.165 0.009 157);
   --sidebar-foreground: oklch(0.974 0.002 165.1);
@@ -130,19 +138,21 @@
   --sidebar-primary-foreground: oklch(0.16 0.03 157);
   --sidebar-accent: oklch(0.244 0.018 158.4);
   --sidebar-accent-foreground: oklch(0.974 0.002 165.1);
-  --sidebar-border: oklch(1 0 0 / 7%);
-  --sidebar-ring: oklch(0.732 0.177 156.3);
+  --sidebar-border: oklch(1 0 0 / 8%);
+  --sidebar-ring: oklch(0.815 0.187 155.4);
 
-  /* gradients & effects */
-  --gradient-emerald: linear-gradient(135deg, oklch(0.815 0.187 155.4), oklch(0.62 0.16 160));
-  --gradient-emerald-soft: linear-gradient(135deg, oklch(0.732 0.177 156.3 / 22%), oklch(0.732 0.177 156.3 / 0%) 70%);
-  --gradient-hero-card: radial-gradient(120% 140% at 100% 0%, oklch(0.732 0.177 156.3 / 32%) 0%, oklch(0.732 0.177 156.3 / 6%) 38%, transparent 62%), linear-gradient(160deg, oklch(0.23 0.02 158), oklch(0.17 0.01 157));
-  --gradient-surface: linear-gradient(180deg, oklch(0.215 0.014 157), oklch(0.185 0.011 156));
+  /* Gradients are reserved for the hero card, the primary button and progress fills */
+  --gradient-emerald: linear-gradient(135deg, oklch(0.815 0.187 155.4), oklch(0.66 0.17 158));
+  --gradient-emerald-soft: linear-gradient(135deg, oklch(0.732 0.177 156.3 / 18%), oklch(0.732 0.177 156.3 / 0%) 70%);
+  --gradient-hero-card: radial-gradient(90% 120% at 100% 0%, oklch(0.732 0.177 156.3 / 20%) 0%, transparent 60%), linear-gradient(170deg, oklch(0.255 0.034 158), oklch(0.18 0.012 157));
+  --gradient-surface: linear-gradient(180deg, oklch(0.197 0.012 155.9), oklch(0.197 0.012 155.9));
   --gradient-fade-bottom: linear-gradient(180deg, transparent 0%, oklch(0.14 0.007 157.2 / 70%) 55%, oklch(0.14 0.007 157.2) 100%);
   --gradient-fade-left: linear-gradient(90deg, oklch(0.14 0.007 157.2) 0%, oklch(0.14 0.007 157.2 / 85%) 40%, transparent 100%);
-  --shadow-card: 0 1px 0 0 oklch(1 0 0 / 5%) inset, 0 20px 40px -24px oklch(0 0 0 / 80%);
-  --shadow-glow: 0 0 0 1px oklch(0.732 0.177 156.3 / 35%), 0 18px 50px -12px oklch(0.732 0.177 156.3 / 45%);
-  --shadow-float: 0 30px 60px -20px oklch(0 0 0 / 85%);
+
+  /* Shadows are structural, never colored */
+  --shadow-card: 0 1px 0 0 oklch(1 0 0 / 4%) inset;
+  --shadow-glow: 0 6px 18px -8px oklch(0.732 0.177 156.3 / 55%);
+  --shadow-float: 0 -8px 32px -12px oklch(0 0 0 / 70%);
 }
 
 @layer base {
@@ -151,12 +161,14 @@
   }
   html {
     -webkit-tap-highlight-color: transparent;
+    text-size-adjust: 100%;
   }
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);
-    font-feature-settings: "ss01", "cv11";
+    font-size: 0.9375rem;
+    line-height: 1.5;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -169,25 +181,62 @@
   }
 }
 
-/* ---------- utilities ---------- */
+/* ---------- type scale ---------- */
+/* Amounts: the one place type gets loud. Always paired with <Money /> for tabular figures. */
+@utility text-display {
+  font-size: clamp(2.25rem, 8vw, 3.25rem);
+  line-height: 1;
+  font-weight: 700;
+  letter-spacing: -0.035em;
+}
+@utility text-headline {
+  font-size: 1.5rem;
+  line-height: 1.2;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+@utility text-title {
+  font-size: 1.0625rem;
+  line-height: 1.35;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+@utility text-label {
+  font-size: 0.8125rem;
+  line-height: 1.3;
+  font-weight: 500;
+}
+
+/* ---------- surfaces ---------- */
+/* Tier 2 — the default container. Flat graphite, one hairline. */
 @utility surface-card {
-  background: var(--gradient-surface);
+  background: var(--surface);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-2xl);
+  border-radius: var(--radius-xl);
   box-shadow: var(--shadow-card);
 }
+/* Tier 1 — one per screen: the number the screen is about. */
 @utility surface-hero {
   background: var(--gradient-hero-card);
-  border: 1px solid oklch(0.732 0.177 156.3 / 22%);
+  border: 1px solid oklch(0.732 0.177 156.3 / 24%);
   border-radius: var(--radius-3xl);
   box-shadow: var(--shadow-card);
 }
+/* Tier 3 — rows inside a card: no box, separated by a hairline. */
+@utility surface-row {
+  border-bottom: 1px solid var(--color-border);
+  &:last-child {
+    border-bottom: 0;
+  }
+}
 @utility glass {
-  background: oklch(0.17 0.01 157 / 72%);
-  backdrop-filter: blur(18px) saturate(140%);
-  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  background: oklch(0.185 0.011 157 / 90%);
+  backdrop-filter: blur(16px) saturate(130%);
+  -webkit-backdrop-filter: blur(16px) saturate(130%);
   border: 1px solid var(--color-border);
 }
+
+/* ---------- color helpers ---------- */
 @utility text-gradient {
   background: var(--gradient-emerald);
   -webkit-background-clip: text;
@@ -212,14 +261,16 @@
 @utility shadow-float {
   box-shadow: var(--shadow-float);
 }
+
+/* ---------- misc ---------- */
 @utility tabular {
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum";
 }
 @utility grid-lines {
   background-image:
-    linear-gradient(oklch(1 0 0 / 3.5%) 1px, transparent 1px),
-    linear-gradient(90deg, oklch(1 0 0 / 3.5%) 1px, transparent 1px);
+    linear-gradient(oklch(1 0 0 / 3%) 1px, transparent 1px),
+    linear-gradient(90deg, oklch(1 0 0 / 3%) 1px, transparent 1px);
   background-size: 32px 32px;
 }
 @utility skeleton {
@@ -229,22 +280,24 @@
   border-radius: var(--radius-md);
 }
 @utility pb-safe-nav {
-  padding-bottom: calc(6.5rem + env(safe-area-inset-bottom));
+  padding-bottom: calc(5.5rem + env(safe-area-inset-bottom));
 }
+/* Touch feedback: answers the person's action */
 @utility press {
   transition: transform 0.15s ease, background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
   &:active {
     transform: scale(0.97);
   }
 }
+/* Tappable cards brighten their edge instead of floating */
 @utility lift {
-  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.25s ease, box-shadow 0.25s ease;
+  transition: border-color 0.2s ease, background-color 0.2s ease, transform 0.15s ease;
   &:hover {
-    transform: translateY(-2px);
     border-color: var(--color-border-strong);
+    background-color: var(--color-surface-2);
   }
   &:active {
-    transform: scale(0.985);
+    transform: scale(0.988);
   }
 }
 @utility no-scrollbar {
@@ -256,7 +309,7 @@
 
 /* ---------- keyframes ---------- */
 @keyframes rise {
-  from { opacity: 0; transform: translateY(14px); }
+  from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
 }
 @keyframes fade {

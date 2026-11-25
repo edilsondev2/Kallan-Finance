@@ -32,8 +32,8 @@ export function CategoryIcon({ icon, color, className }: { icon?: string | null;
   const c = categoryColor(color);
   return (
     <span
-      className={cn("inline-flex size-10 shrink-0 items-center justify-center rounded-xl border border-border", className)}
-      style={{ color: c, background: `color-mix(in oklab, ${c} 14%, transparent)` }}
+      className={cn("inline-flex size-10 shrink-0 items-center justify-center rounded-xl", className)}
+      style={{ color: c, background: `color-mix(in oklab, ${c} 16%, transparent)` }}
     >
       <Icon className="size-[18px]" />
     </span>

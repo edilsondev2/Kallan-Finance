@@ -5,5 +5,5 @@ export function Field({label,children,htmlFor}: {label:string;children:ReactNode
   return <div className="space-y-2"><Label htmlFor={htmlFor}>{label}</Label>{children}</div>;
 }
 export function FieldSelect({className,...props}:SelectHTMLAttributes<HTMLSelectElement>) {
-  return <select className={cn('h-11 w-full min-w-0 rounded-lg border border-input bg-surface px-3 text-sm text-foreground focus-visible:ring-2 focus-visible:ring-ring',className)} {...props}/>;
+  return <select className={cn('h-12 w-full min-w-0 rounded-lg border border-input bg-surface-2 px-3 text-sm text-foreground focus-visible:ring-2 focus-visible:ring-ring',className)} {...props}/>;
 }

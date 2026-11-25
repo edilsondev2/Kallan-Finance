@@ -42,6 +42,7 @@ use the editor.
 - Uploaded images go to the private `media` bucket under `<userId>/<folder>/`; store the path and render via `useSignedImage`. Why: workspace blocks public buckets.
 
 ## Styling
+- Design system v2 is documented in `DESIGN.md` (tokens, surface tiers, type scale). Read it before adding UI.
 - Dark-only brand. Use semantic tokens from `src/styles.css` (bg-background, bg-surface, bg-surface-2, text-muted-foreground, text-positive, text-negative, text-primary-glow, border-border-strong) and utilities (surface-card, surface-hero, glass, lift, press, animate-rise, tabular, bg-emerald-gradient, text-gradient, skeleton). Never hardcode colors.
 - Monetary values always render through `<Money />` so the global "hide values" preference applies.
 

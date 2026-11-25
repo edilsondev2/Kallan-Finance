@@ -147,7 +147,7 @@ function AuthPage() {
             <KallanLogo />
           </Link>
           <div className="max-w-md animate-rise">
-            <p className="text-xs font-medium uppercase tracking-[0.3em] text-primary">Kallan Finance</p>
+            <p className="text-label text-primary-glow">Kallan Finance</p>
             <p className="mt-3 font-display text-4xl font-semibold leading-tight tracking-tight">
               Seu dinheiro. Seu negócio. <span className="text-gradient">Seu próximo passo.</span>
             </p>

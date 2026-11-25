@@ -5,7 +5,7 @@ export function ProgressBar({ value, className, tone = "primary" }: { value: num
   const bar = tone === "warning" ? "bg-warning" : tone === "negative" ? "bg-negative" : "bg-emerald-gradient";
   return (
     <div
-      className={cn("h-2 w-full overflow-hidden rounded-full bg-surface-3/70", className)}
+      className={cn("h-2.5 w-full overflow-hidden rounded-full bg-surface-3", className)}
       role="progressbar"
       aria-valuemin={0}
       aria-valuemax={100}
