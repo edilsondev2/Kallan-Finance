@@ -1,4 +1,4 @@
-import { useState, type CSSProperties, type KeyboardEvent } from "react";
+import { useMemo, useState, type CSSProperties, type KeyboardEvent } from "react";
 import { Link } from "@tanstack/react-router";
 import { ArrowDownRight, ArrowUpRight, Bell, ChevronRight, Eye, EyeOff, Landmark, Plus, Sparkles, Target } from "lucide-react";
 import { Page } from "@/components/kallan/page";
@@ -8,11 +8,14 @@ import { CategoryIcon, categoryColor } from "@/components/kallan/category-icon";
 import { ErrorState, LoadingCards } from "@/components/kallan/states";
 import { UserAvatar } from "@/components/kallan/user-avatar";
 import { useUnreadCount } from "@/components/kallan/app-shell";
+import { Celebrate, readSeen, type CelebrationItem } from "@/components/kallan/celebrate";
+import { useCountUp } from "@/lib/use-count-up";
 import { useKallanChat } from "@/components/kallan/kallan-chat";
 import { useHideValues, useMyProfile } from "@/modules/settings/queries";
 import { cn } from "@/lib/utils";
 import { firstName, formatBRL, formatDate, formatDateTime, formatPercent, greeting, monthLabel, toNumber } from "@/lib/format";
 import { useFinanceData } from "../queries";
+import type { FinanceData } from "../types";
 import {
   cashVariation,
   categoryBreakdown,
@@ -22,6 +25,7 @@ import {
   goalProgress,
   monthKeyOf,
   monthSummary,
+  prevMonth,
 } from "../calculations";
 import { dueLabel, upcomingInvoices } from "../bills";
 import { FinanceEditor } from "./editor";
@@ -30,6 +34,7 @@ const enter = (i: number) => ({ "--n": i }) as CSSProperties;
 
 /** Splits the big balance into R$ / integer / cents, like the approved prototype. */
 function BigValue({ value, hidden }: { value: number; hidden: boolean }) {
+  const shown = useCountUp(value, !hidden, 1400);
   if (hidden) {
     return (
       <div className="k-hx-val" aria-label="Valor oculto">
@@ -37,7 +42,7 @@ function BigValue({ value, hidden }: { value: number; hidden: boolean }) {
       </div>
     );
   }
-  const [int = "0", dec = "00"] = Math.abs(value).toFixed(2).split(".");
+  const [int = "0", dec = "00"] = Math.abs(shown).toFixed(2).split(".");
   return (
     <div className="k-hx-val" aria-label={formatBRL(value)}>
       {value < 0 ? "−" : ""}
@@ -57,6 +62,7 @@ function Ring({ progress, size = 66, stroke = 8 }: { progress: number; size?: nu
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-hidden="true">
       <circle cx={h} cy={h} r={r} fill="none" stroke="var(--surface-3)" strokeWidth={stroke} />
       <circle
+        className="k-ringfill"
         cx={h}
         cy={h}
         r={r}
@@ -76,6 +82,31 @@ function questionForInsight(id: string | undefined): string {
   if (id.startsWith("goal-")) return "Como estão minhas metas?";
   if (id.startsWith("cat-up")) return "Onde estou gastando mais?";
   return "Como foi meu mês?";
+}
+
+/** Picks at most one real achievement that has not been celebrated yet. */
+function HomeCelebration({ data, now }: { data: FinanceData; now: Date }) {
+  const item = useMemo<CelebrationItem | null>(() => {
+    const seen = new Set(readSeen());
+    const weekAgo = now.getTime() - 7 * 24 * 60 * 60 * 1000;
+    for (const g of data.goals) {
+      const doneAt = g.completed_at ? new Date(g.completed_at).getTime() : 0;
+      if (doneAt >= weekAgo && goalProgress(g) >= 1 && !seen.has(`goal-${g.id}`)) {
+        return { id: `goal-${g.id}`, title: "Meta batida!", text: `Você chegou em “${g.title}”. Isso é conquista sua.` };
+      }
+    }
+    if (now.getDate() <= 10) {
+      const prev = prevMonth(monthKeyOf(now));
+      const sum = monthSummary(data.transactions, prev);
+      const id = `month-${prev.year}-${prev.month}`;
+      if (sum.income > 0 && sum.result > 0 && !seen.has(id)) {
+        return { id, title: `Você fechou ${monthLabel(new Date(prev.year, prev.month, 1)).toLowerCase()} no azul`, text: "Entrou mais dinheiro do que saiu. Bom ritmo!" };
+      }
+    }
+    return null;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data.goals, data.transactions]);
+  return <Celebrate item={item} />;
 }
 
 export function Overview() {
@@ -117,7 +148,7 @@ export function Overview() {
   const catKey = (c: { categoryId: string | null }) => c.categoryId ?? "none";
   const selected = activeCat ? cats.find((c) => catKey(c) === activeCat) : undefined;
   let offset = 0;
-  const segments = cats.map((c) => {
+  const segments = cats.map((c, idx) => {
     const len = c.share * C;
     const vis = Math.max(len - 3, 0.5);
     const key = catKey(c);
@@ -130,7 +161,7 @@ export function Overview() {
         cy={80}
         r={R}
         fill="none"
-        style={{ stroke: categoryColor(c.color) }}
+        style={{ stroke: categoryColor(c.color), "--i": idx } as CSSProperties}
         strokeWidth={on ? 24 : 20}
         strokeDasharray={`${vis} ${C - vis}`}
         strokeDashoffset={-offset}
@@ -160,19 +191,32 @@ export function Overview() {
       : quality.lastUpdate
         ? `Atualizado em ${formatDateTime(quality.lastUpdate)}`
         : "Ainda não há saldos registrados";
+  const hour = now.getHours();
+  const tod = hour < 5 ? "night" : hour < 10 ? "dawn" : hour < 17 ? "day" : hour < 20 ? "dusk" : "night";
+  const mood =
+    month.income > 0
+      ? used <= 0.7
+        ? "Seu mês está no ritmo"
+        : used <= 1
+          ? "Fique de olho nos gastos do mês"
+          : "Você gastou mais do que recebeu"
+      : "Bem-vindo de volta";
   const PillIcon = ratio !== null && ratio < 0 ? ArrowDownRight : ArrowUpRight;
 
   return (
     <div className="k-home k-enter">
+      {mode !== "demo" && <HomeCelebration data={data} now={now} />}
       <div style={enter(0)}>
-        <div className="k-hx">
+        <div className="k-hx" data-tod={tod}>
+          <i className="k-hx-orb" aria-hidden="true" />
+          <i className="k-hx-orb two" aria-hidden="true" />
           <div className="k-hx-top">
             <Link to="/perfil" className="k-hx-id" aria-label="Abrir perfil">
               <span className="k-hx-av">
                 <UserAvatar name={profile?.display_name} path={profile?.avatar_url} className="size-full bg-transparent text-[19px] text-[#0a0a0b]" />
               </span>
               <span className="k-hx-hi">
-                <small>Bem-vindo de volta</small>
+                <small>{mood}</small>
                 <b>{greeting(now)}, {name || "bem-vindo"}</b>
               </span>
             </Link>
@@ -224,11 +268,11 @@ export function Overview() {
           <div className="k-sum">
             <div>
               <small>Em contas</small>
-              <b><Money value={position.availableCash} /></b>
+              <b><Money count value={position.availableCash} /></b>
             </div>
             <div>
               <small>Investido</small>
-              <b><Money value={position.investmentsTotal} /></b>
+              <b><Money count value={position.investmentsTotal} /></b>
             </div>
           </div>
           {position.obligations > 0 && (
@@ -269,11 +313,11 @@ export function Overview() {
           <div className="k-m-top">
             <div>
               <small><i className="k-dt in" />Entradas</small>
-              <b><Money value={month.income} /></b>
+              <b><Money count value={month.income} /></b>
             </div>
             <div>
               <small><i className="k-dt out" />Saídas</small>
-              <b><Money value={month.expenses} /></b>
+              <b><Money count value={month.expenses} /></b>
             </div>
           </div>
           <div className="k-m-bar" role="img" aria-label={`Você gastou ${Math.round(used * 100)}% do que recebeu`}>
