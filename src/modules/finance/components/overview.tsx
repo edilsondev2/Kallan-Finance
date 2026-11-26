@@ -11,6 +11,7 @@ import { useUnreadCount } from "@/components/kallan/app-shell";
 import { Celebrate, readSeen, type CelebrationItem } from "@/components/kallan/celebrate";
 import { useCountUp } from "@/lib/use-count-up";
 import { useKallanChat } from "@/components/kallan/kallan-chat";
+import { KallanOrb } from "@/components/kallan/orb";
 import { useHideValues, useMyProfile } from "@/modules/settings/queries";
 import { cn } from "@/lib/utils";
 import { firstName, formatBRL, formatDate, formatDateTime, formatPercent, greeting, monthLabel, toNumber } from "@/lib/format";
@@ -138,7 +139,6 @@ export function Overview() {
 
   const fmt = (n: number) => (hidden ? "R$ ••••••" : formatBRL(n));
   const name = firstName(profile?.display_name);
-  const top = insights[0];
   const used = month.income > 0 ? Math.min(1, month.expenses / month.income) : 0;
   const ratio = variation && variation.previous !== 0 ? variation.change / Math.abs(variation.previous) : null;
 
@@ -290,18 +290,22 @@ export function Overview() {
             <DemoBadge />
           </div>
         )}
-        <button type="button" className="k-insight" onClick={() => openChat(questionForInsight(top?.id))}>
-          <span className="k-orb"><Sparkles /></span>
-          <span className="k-insight-body">
-            <b>{top ? top.title : "Kallan Intelligence"}</b>
-            <p>
-              {top
-                ? top.explanation
-                : "Pergunte sobre seus gastos, vencimentos e metas. Com mais registros, a Kallan aponta tendências com segurança."}
-            </p>
-          </span>
-          <ChevronRight />
-        </button>
+        <div className={cn("k-ins-strip", insights.length > 1 && "multi")} aria-label="Insights da Kallan">
+          {(insights.length ? insights.slice(0, 4) : [null]).map((ins) => (
+            <button key={ins?.id ?? "intro"} type="button" className="k-insight" onClick={() => openChat(questionForInsight(ins?.id))}>
+              <KallanOrb size={46} state="idle" />
+              <span className="k-insight-body">
+                <b>{ins ? ins.title : "Kallan Intelligence"}</b>
+                <p>
+                  {ins
+                    ? ins.explanation
+                    : "Pergunte sobre seus gastos, vencimentos e metas. Com mais registros, a Kallan aponta tendências com segurança."}
+                </p>
+              </span>
+              <ChevronRight />
+            </button>
+          ))}
+        </div>
       </div>
 
       <section style={enter(3)}>

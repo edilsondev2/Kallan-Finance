@@ -95,13 +95,13 @@ export function WelcomePage() {
               <Sparkles />
             </span>
           </div>
-          <span className="k-chip absolute left-2 top-10" style={{ "--d": "0s" } as React.CSSProperties}>
+          <span className="k-fchip absolute left-2 top-10" style={{ "--d": "0s" } as React.CSSProperties}>
             <Wallet /> Contas
           </span>
-          <span className="k-chip absolute right-0 top-24" style={{ "--d": "1.5s" } as React.CSSProperties}>
+          <span className="k-fchip absolute right-0 top-24" style={{ "--d": "1.5s" } as React.CSSProperties}>
             <Target /> Metas
           </span>
-          <span className="k-chip absolute bottom-16 left-10" style={{ "--d": "3s" } as React.CSSProperties}>
+          <span className="k-fchip absolute bottom-16 left-10" style={{ "--d": "3s" } as React.CSSProperties}>
             <ChartNoAxesCombined /> Clareza
           </span>
         </div>

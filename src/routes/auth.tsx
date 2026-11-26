@@ -151,13 +151,13 @@ function AuthPage() {
               Seu dinheiro. Seu negócio. <span className="k-shine">Seu próximo passo.</span>
             </p>
             <div className="mt-10 flex flex-wrap gap-3">
-              <span className="k-chip" style={{ "--d": "0s" } as React.CSSProperties}>
+              <span className="k-fchip" style={{ "--d": "0s" } as React.CSSProperties}>
                 <Wallet /> Contas em um só lugar
               </span>
-              <span className="k-chip" style={{ "--d": "1.2s" } as React.CSSProperties}>
+              <span className="k-fchip" style={{ "--d": "1.2s" } as React.CSSProperties}>
                 <Target /> Metas que avançam
               </span>
-              <span className="k-chip" style={{ "--d": "2.4s" } as React.CSSProperties}>
+              <span className="k-fchip" style={{ "--d": "2.4s" } as React.CSSProperties}>
                 <Sparkles /> Kallan Intelligence
               </span>
             </div>

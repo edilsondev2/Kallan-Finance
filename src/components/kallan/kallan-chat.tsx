@@ -9,9 +9,13 @@ import { useHideValues, useMyProfile, useSettings } from "@/modules/settings/que
 import { buildReply, SUGGESTIONS, type Block, type MiniRow } from "@/modules/intelligence/chat-replies";
 import { firstName } from "@/lib/format";
 import { CategoryIcon } from "./category-icon";
-import { KallanGlyph } from "./logo";
+import { KallanOrb, type OrbState } from "./orb";
+import { useTypewriter } from "@/lib/use-typewriter";
 
-type Msg = { id: number; role: "user" | "bot"; text?: string; blocks?: Block[] };
+type Msg = { id: number; role: "user" | "bot"; text?: string; blocks?: Block[]; fresh?: boolean };
+
+/** Bot messages whose typing animation already finished, so reopening a conversation does not replay it. */
+const revealed = new Set<number>();
 type Convo = { title: string; messages: Msg[] };
 
 type ChatContextValue = {
@@ -34,7 +38,7 @@ export function KallanChatProvider({ children }: { children: ReactNode }) {
   const [pending, setPending] = useState<string | null>(null);
   const [messages, setMessages] = useState<Msg[]>([]);
   const [convos, setConvos] = useState<Convo[]>([]);
-  const nextId = useRef(1);
+  const nextId = useRef(Date.now());
 
   const openChat = useCallback((question?: string) => {
     if (question) setPending(question);
@@ -85,20 +89,42 @@ function MiniList({ rows }: { rows: MiniRow[] }) {
   );
 }
 
-function Blocks({ blocks, onAsk, onNavigate }: { blocks: Block[]; onAsk: (q: string) => void; onNavigate: () => void }) {
+function textLength(blocks: Block[]): number {
+  let n = 0;
+  for (const b of blocks) if (b.kind === "p") for (const part of b.parts) n += typeof part === "string" ? part.length : part.b.length;
+  return n;
+}
+
+function Blocks({ blocks, onAsk, onNavigate, limit = Infinity }: { blocks: Block[]; onAsk: (q: string) => void; onNavigate: () => void; limit?: number }) {
+  const total = textLength(blocks);
+  let budget = limit;
   return (
     <>
       {blocks.map((blk, i) => {
         if (blk.kind === "p") {
+          if (budget <= 0) return null;
           return (
             <p key={i}>
-              {blk.parts.map((part, k) => (typeof part === "string" ? <Fragment key={k}>{part}</Fragment> : <b key={k}>{part.b}</b>))}
+              {blk.parts.map((part, k) => {
+                const str = typeof part === "string" ? part : part.b;
+                const shown = str.slice(0, Math.max(0, budget));
+                budget -= str.length;
+                if (!shown) return null;
+                return typeof part === "string" ? <Fragment key={k}>{shown}</Fragment> : <b key={k}>{shown}</b>;
+              })}
             </p>
           );
         }
-        if (blk.kind === "mini") return <MiniList key={i} rows={blk.rows} />;
+        if (limit < total) return null;
+        if (blk.kind === "mini") {
+          return (
+            <div key={i} className="k-fadein">
+              <MiniList rows={blk.rows} />
+            </div>
+          );
+        }
         return (
-          <div key={i} className="k-acts">
+          <div key={i} className="k-acts k-fadein">
             {blk.acts.map((a) =>
               a.ask ? (
                 <button key={a.label} type="button" className="k-chip" onClick={() => onAsk(a.ask ?? a.label)}>
@@ -115,6 +141,25 @@ function Blocks({ blocks, onAsk, onNavigate }: { blocks: Block[]; onAsk: (q: str
       })}
     </>
   );
+}
+
+/** One bot reply. New replies are typed out; the orb reports when it is "speaking". */
+function BotBody({ m, onAsk, onNavigate, onSpeak, onGrow }: { m: Msg; onAsk: (q: string) => void; onNavigate: () => void; onSpeak: (id: number, on: boolean) => void; onGrow: () => void }) {
+  const blocks = m.blocks ?? [];
+  const total = textLength(blocks);
+  const animate = !!m.fresh && !revealed.has(m.id);
+  const n = useTypewriter(total, animate);
+  const done = n >= total;
+
+  useEffect(() => {
+    onSpeak(m.id, animate && !done);
+    if (done) revealed.add(m.id);
+    onGrow();
+  }, [n, done, animate, m.id, onSpeak, onGrow]);
+
+  useEffect(() => () => onSpeak(m.id, false), [m.id, onSpeak]);
+
+  return <Blocks blocks={blocks} onAsk={onAsk} onNavigate={onNavigate} limit={done ? Infinity : n} />;
 }
 
 type OverlayProps = {
@@ -138,6 +183,7 @@ function ChatOverlay({ messages, setMessages, convos, setConvos, nextId, pending
 
   const [text, setText] = useState("");
   const [typing, setTyping] = useState(false);
+  const [speakingId, setSpeakingId] = useState<number | null>(null);
   const [sheet, setSheet] = useState<null | "menu" | "history">(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -164,7 +210,7 @@ function ChatOverlay({ messages, setMessages, convos, setConvos, nextId, pending
           name,
           failed: finance.isError,
         });
-        setMessages((m) => [...m, { id: nextId.current++, role: "bot", blocks }]);
+        setMessages((m) => [...m, { id: nextId.current++, role: "bot", blocks, fresh: true }]);
         setTyping(false);
       }, 520);
       timers.current.push(id);
@@ -210,6 +256,12 @@ function ChatOverlay({ messages, setMessages, convos, setConvos, nextId, pending
   }, [messages, typing]);
 
   const started = messages.length > 0;
+  const orbState: OrbState = typing ? "thinking" : speakingId !== null ? "speaking" : "idle";
+  const onSpeak = useCallback((id: number, on: boolean) => setSpeakingId((cur) => (on ? id : cur === id ? null : cur)), []);
+  const onGrow = useCallback(() => {
+    const el = scrollRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, []);
 
   function submit(e: FormEvent) {
     e.preventDefault();
@@ -246,6 +298,7 @@ function ChatOverlay({ messages, setMessages, convos, setConvos, nextId, pending
           <button type="button" className="k-icon-btn" onClick={onClose} aria-label="Fechar conversa">
             <X />
           </button>
+          {started && <KallanOrb size={38} state={orbState} className="k-head-orb" />}
           <button type="button" className="k-icon-btn" onClick={() => setSheet("history")} aria-label="Conversas anteriores">
             <Clock />
           </button>
@@ -254,9 +307,7 @@ function ChatOverlay({ messages, setMessages, convos, setConvos, nextId, pending
         <div className="k-chat-scroll" ref={scrollRef}>
           {!started && (
             <div className="k-chat-start">
-              <span className="k-mark">
-                <KallanGlyph />
-              </span>
+              <KallanOrb size={120} state={orbState} />
               <h2>{name ? `Olá, ${name}` : "Olá"}</h2>
               <p>Como posso te ajudar?</p>
             </div>
@@ -273,7 +324,7 @@ function ChatOverlay({ messages, setMessages, convos, setConvos, nextId, pending
                     <Sparkles />
                   </span>
                   <div className="k-bbody">
-                    <Blocks blocks={m.blocks ?? []} onAsk={ask} onNavigate={onClose} />
+                    <BotBody m={m} onAsk={ask} onNavigate={onClose} onSpeak={onSpeak} onGrow={onGrow} />
                   </div>
                 </div>
               ),

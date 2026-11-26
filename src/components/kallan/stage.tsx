@@ -36,9 +36,9 @@ export function AuthStage({ children, className }: { children: ReactNode; classN
   return (
     <div ref={ref} className={cn("k-stage k-dark", className)}>
       <div className="k-stage-bg" aria-hidden="true">
-        <div className="k-orb o1" />
-        <div className="k-orb o2" />
-        <div className="k-orb o3" />
+        <div className="k-sorb o1" />
+        <div className="k-sorb o2" />
+        <div className="k-sorb o3" />
         <div className="k-stage-grid" />
         <div className="k-ring" />
         <div className="k-ring" style={{ "--d": "3.3s" } as React.CSSProperties} />
