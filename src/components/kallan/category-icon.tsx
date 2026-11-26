@@ -27,13 +27,13 @@ export function categoryColor(name: string | null | undefined): string {
   return CATEGORY_COLOR[name ?? "slate"] ?? "var(--chart-8)";
 }
 
-export function CategoryIcon({ icon, color, className }: { icon?: string | null; color?: string | null; className?: string }) {
+export function CategoryIcon({ icon, color, className }: { icon?: string | null | undefined; color?: string | null | undefined; className?: string | undefined }) {
   const Icon = ICONS[icon ?? "circle"] ?? Circle;
   const c = categoryColor(color);
   return (
     <span
-      className={cn("inline-flex size-10 shrink-0 items-center justify-center rounded-xl border border-border", className)}
-      style={{ color: c, background: `color-mix(in oklab, ${c} 14%, transparent)` }}
+      className={cn("inline-flex size-10 shrink-0 items-center justify-center rounded-xl", className)}
+      style={{ color: c, background: `color-mix(in oklab, ${c} 16%, transparent)` }}
     >
       <Icon className="size-[18px]" />
     </span>

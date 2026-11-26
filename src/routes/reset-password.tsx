@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { KallanLogo } from "@/components/kallan/logo";
+import { AuthStage } from "@/components/kallan/stage";
 
 export const Route = createFileRoute("/reset-password")({
   head: () => ({
@@ -66,19 +67,22 @@ function ResetPasswordPage() {
   }
 
   return (
-    <div className="flex min-h-dvh flex-col items-center justify-center px-5">
-      <Link to="/" className="mb-10">
+    <AuthStage className="flex flex-col items-center justify-center px-5">
+      <Link to="/" className="k-up mb-10">
         <KallanLogo />
       </Link>
-      <div className="surface-card w-full max-w-sm p-6 animate-rise">
-        <div className="flex size-12 items-center justify-center rounded-2xl border border-primary/30 bg-primary/10 text-primary-glow">
-          <LockKeyhole className="size-5" />
+      <div className="k-auth-card k-up w-full max-w-sm">
+        <div className="k-orbit scale-75">
+          <i />
+          <span>
+            <LockKeyhole />
+          </span>
         </div>
-        <h1 className="mt-4 text-xl font-semibold">Defina uma nova senha</h1>
+        <h1 className="mt-2 text-center font-display text-2xl font-semibold">Defina uma nova senha</h1>
         {!ready ? (
           <p className="mt-2 text-sm text-muted-foreground">
             Abra esta página pelo link enviado ao seu e-mail. Se o link expirou,{" "}
-            <Link to="/auth" className="text-primary hover:underline">
+            <Link to="/auth" className="text-brand hover:underline">
               solicite um novo
             </Link>
             .
@@ -93,13 +97,13 @@ function ResetPasswordPage() {
               <Label htmlFor="pw2" className="text-xs text-muted-foreground">Confirme a senha</Label>
               <Input id="pw2" type="password" autoComplete="new-password" value={confirm} onChange={(e) => setConfirm(e.target.value)} />
             </div>
-            {error && <p className="text-xs text-negative">{error}</p>}
+            {error && <p className="text-xs text-destructive">{error}</p>}
             <Button type="submit" variant="hero" className="w-full" disabled={busy}>
               {busy && <Loader2 className="animate-spin" />} Salvar nova senha
             </Button>
           </form>
         )}
       </div>
-    </div>
+    </AuthStage>
   );
 }

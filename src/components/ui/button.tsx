@@ -5,24 +5,24 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "press inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full text-sm font-medium cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 disabled:cursor-not-allowed [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "press inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-[15px] text-sm font-semibold cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 disabled:cursor-not-allowed [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary-glow shadow-glow",
-        hero: "bg-emerald-gradient text-primary-foreground font-semibold shadow-glow hover:brightness-110",
+        default: "bg-primary text-primary-foreground hover:bg-primary/90",
+        hero: "bg-primary text-primary-foreground shadow-glow hover:bg-primary/90",
         destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
         outline: "border border-border-strong bg-transparent text-foreground hover:bg-surface-2",
-        secondary: "bg-surface-2 text-foreground hover:bg-surface-3 border border-border",
+        secondary: "bg-surface-2 text-foreground hover:bg-surface-3 border border-border-strong",
         glass: "glass text-foreground hover:bg-surface-2",
         ghost: "text-foreground hover:bg-surface-2",
-        link: "text-primary underline-offset-4 hover:underline rounded-none",
+        link: "text-foreground underline decoration-border-strong underline-offset-4 hover:decoration-foreground rounded-none",
       },
       size: {
         default: "h-11 px-5",
         sm: "h-9 px-4 text-xs",
         lg: "h-12 px-7 text-base",
-        icon: "h-10 w-10",
+        icon: "h-11 w-11",
         "icon-sm": "h-8 w-8",
       },
     },
