@@ -181,7 +181,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <div className="k-shell">
         <Rail />
         <main className="k-main">
-          <div key={pathname} className="animate-fade">
+          <div key={pathname} className="k-page">
             {children}
           </div>
         </main>
