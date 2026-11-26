@@ -225,7 +225,9 @@
 }
 
 /* ---------- DARK (forced) ---------- */
-:root[data-theme="dark"] {
+:root[data-theme="dark"],
+/* .k-dark forces the dark palette inside the sign-up flow, whatever the device theme */
+.k-dark {
   color-scheme: dark;
   --background: #050506;
   --foreground: #f5f5f7;

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { z } from "zod";
-import { ArrowLeft, Loader2, Mail, ShieldCheck } from "lucide-react";
+import { ArrowLeft, Loader2, Mail, ShieldCheck, Sparkles, Target, Wallet } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { KallanLogo } from "@/components/kallan/logo";
-import heroImg from "@/assets/hero-woman.jpg";
+import { AuthStage } from "@/components/kallan/stage";
 import { useAuth } from "@/modules/auth/auth-context";
 
 const searchSchema = z.object({ mode: z.enum(["entrar", "criar"]).optional() });
@@ -137,120 +137,139 @@ function AuthPage() {
   };
 
   return (
-    <div className="grid min-h-dvh lg:grid-cols-[1.05fr_1fr]">
-      <aside className="relative hidden overflow-hidden lg:block">
-        <img src={heroImg} alt="Mulher empreendedora consultando o aplicativo no celular" className="absolute inset-0 size-full object-cover object-[70%_20%]" />
-        <div className="absolute inset-0 bg-fade-left" />
-        <div className="absolute inset-0 bg-fade-bottom opacity-70" />
-        <div className="relative flex h-full flex-col justify-between p-12">
-          <Link to="/">
+    <AuthStage>
+      <div className="grid min-h-dvh lg:grid-cols-[1.05fr_1fr]">
+        <aside className="relative hidden lg:flex lg:flex-col lg:justify-between lg:p-12">
+          <Link to="/" className="k-up">
             <KallanLogo />
           </Link>
-          <div className="max-w-md animate-rise">
-            <p className="text-label text-primary-glow">Kallan Finance</p>
-            <p className="mt-3 font-display text-4xl font-semibold leading-tight tracking-tight">
-              Seu dinheiro. Seu negócio. <span className="text-gradient">Seu próximo passo.</span>
+          <div className="relative max-w-md">
+            <p className="text-label k-up" style={{ "--n": 1 } as React.CSSProperties}>
+              Kallan Finance
+            </p>
+            <p className="k-up mt-3 font-display text-5xl font-semibold leading-[1.05] tracking-tight" style={{ "--n": 2 } as React.CSSProperties}>
+              Seu dinheiro. Seu negócio. <span className="k-shine">Seu próximo passo.</span>
+            </p>
+            <div className="mt-10 flex flex-wrap gap-3">
+              <span className="k-chip" style={{ "--d": "0s" } as React.CSSProperties}>
+                <Wallet /> Contas em um só lugar
+              </span>
+              <span className="k-chip" style={{ "--d": "1.2s" } as React.CSSProperties}>
+                <Target /> Metas que avançam
+              </span>
+              <span className="k-chip" style={{ "--d": "2.4s" } as React.CSSProperties}>
+                <Sparkles /> Kallan Intelligence
+              </span>
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground">Plataforma independente de gestão e inteligência financeira.</p>
+        </aside>
+
+        <main className="relative flex flex-col px-5 py-6 sm:px-10">
+          <div className="relative flex items-center justify-between lg:hidden">
+            <Link to="/">
+              <KallanLogo />
+            </Link>
+          </div>
+          <div className="relative mx-auto flex w-full max-w-md flex-1 flex-col justify-center py-8">
+            <div className="k-auth-card k-up">
+              {view !== "entrar" && view !== "criar" && (
+                <button onClick={() => setView("entrar")} className="press mb-5 inline-flex w-fit items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
+                  <ArrowLeft className="size-4" /> Voltar para entrar
+                </button>
+              )}
+
+              {(view === "entrar" || view === "criar") && (
+                <div className="k-tabs mb-7" role="tablist" data-on={view}>
+                  {(["entrar", "criar"] as const).map((v) => (
+                    <button
+                      key={v}
+                      type="button"
+                      role="tab"
+                      aria-selected={view === v}
+                      onClick={() => {
+                        setView(v);
+                        setErrors({});
+                      }}
+                      className="press"
+                    >
+                      {v === "entrar" ? "Entrar" : "Criar conta"}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              <div key={view} className="k-swap">
+                <h1 className="font-display text-3xl font-semibold tracking-tight">{titles[view][0]}</h1>
+                <p className="mt-2 text-sm text-muted-foreground">{titles[view][1]}</p>
+
+                {view === "verifique" ? (
+                  <div className="mt-8 flex flex-col items-center text-center">
+                    <div className="k-orbit">
+                      <i />
+                      <span>
+                        <Mail />
+                      </span>
+                    </div>
+                    <p className="mt-6 text-sm text-muted-foreground">
+                      Enviamos para <span className="text-foreground">{email}</span>. Depois de confirmar, você volta direto para o app.
+                    </p>
+                  </div>
+                ) : (
+                  <form onSubmit={onSubmit} className="mt-6 space-y-4" noValidate>
+                    {view === "criar" && (
+                      <Field id="name" label="Nome" error={errors["name"]}>
+                        <Input id="name" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} aria-invalid={!!errors["name"]} placeholder="Como devemos te chamar?" />
+                      </Field>
+                    )}
+                    <Field id="email" label="E-mail" error={errors["email"]}>
+                      <Input id="email" type="email" inputMode="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} aria-invalid={!!errors["email"]} placeholder="voce@email.com" />
+                    </Field>
+                    {view !== "recuperar" && (
+                      <Field
+                        id="password"
+                        label="Senha"
+                        error={errors["password"]}
+                        hint={view === "criar" ? "Mínimo de 8 caracteres, com letras e números." : undefined}
+                        extra={
+                          view === "entrar" ? (
+                            <button type="button" onClick={() => setView("recuperar")} className="text-xs text-brand hover:underline">
+                              Esqueci minha senha
+                            </button>
+                          ) : null
+                        }
+                      >
+                        <Input id="password" type="password" autoComplete={view === "criar" ? "new-password" : "current-password"} value={password} onChange={(e) => setPassword(e.target.value)} aria-invalid={!!errors["password"]} placeholder="••••••••" />
+                      </Field>
+                    )}
+                    <Button type="submit" variant="hero" size="lg" className="w-full" disabled={busy}>
+                      {busy && <Loader2 className="animate-spin" />}
+                      {view === "entrar" ? "Entrar" : view === "criar" ? "Criar conta" : "Enviar link"}
+                    </Button>
+                  </form>
+                )}
+
+                {(view === "entrar" || view === "criar") && (
+                  <>
+                    <div className="my-6 flex items-center gap-3 text-xs text-muted-foreground">
+                      <span className="h-px flex-1 bg-border" /> ou <span className="h-px flex-1 bg-border" />
+                    </div>
+                    <Button type="button" variant="secondary" size="lg" className="w-full" onClick={onGoogle} disabled={busy}>
+                      <GoogleIcon /> Continuar com Google
+                    </Button>
+                  </>
+                )}
+              </div>
+            </div>
+
+            <p className="k-up mt-6 flex items-start gap-2 px-2 text-xs text-muted-foreground" style={{ "--n": 3 } as React.CSSProperties}>
+              <ShieldCheck className="mt-0.5 size-4 shrink-0 text-brand" />
+              O Kallan nunca pede senha bancária. Conexões com instituições acontecem apenas pelo canal oficial de cada instituição.
             </p>
           </div>
-        </div>
-      </aside>
-
-      <main className="relative flex flex-col px-5 py-6 sm:px-10">
-        <div className="pointer-events-none absolute inset-0 grid-lines opacity-50 [mask-image:radial-gradient(70%_50%_at_50%_0%,black,transparent)]" />
-        <div className="relative flex items-center justify-between lg:hidden">
-          <Link to="/">
-            <KallanLogo />
-          </Link>
-        </div>
-        <div className="relative mx-auto flex w-full max-w-sm flex-1 flex-col justify-center py-10">
-          {view !== "entrar" && view !== "criar" && (
-            <button onClick={() => setView("entrar")} className="press mb-6 inline-flex w-fit items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
-              <ArrowLeft className="size-4" /> Voltar para entrar
-            </button>
-          )}
-          <h1 className="font-display text-3xl font-semibold tracking-tight animate-rise">{titles[view][0]}</h1>
-          <p className="mt-2 text-sm text-muted-foreground animate-rise">{titles[view][1]}</p>
-
-          {(view === "entrar" || view === "criar") && (
-            <div className="mt-8 grid grid-cols-2 rounded-full border border-border bg-surface p-1" role="tablist">
-              {(["entrar", "criar"] as const).map((v) => (
-                <button
-                  key={v}
-                  role="tab"
-                  aria-selected={view === v}
-                  onClick={() => {
-                    setView(v);
-                    setErrors({});
-                  }}
-                  className={`press rounded-full py-2 text-sm font-medium transition-colors ${view === v ? "bg-surface-3 text-foreground" : "text-muted-foreground hover:text-foreground"}`}
-                >
-                  {v === "entrar" ? "Entrar" : "Criar conta"}
-                </button>
-              ))}
-            </div>
-          )}
-
-          {view === "verifique" ? (
-            <div className="surface-card mt-8 flex flex-col items-center p-8 text-center animate-rise">
-              <div className="flex size-14 items-center justify-center rounded-2xl border border-primary/30 bg-primary/10 text-primary-glow">
-                <Mail className="size-6" />
-              </div>
-              <p className="mt-4 text-sm text-muted-foreground">
-                Enviamos para <span className="text-foreground">{email}</span>. Depois de confirmar, você volta direto para o app.
-              </p>
-            </div>
-          ) : (
-            <form onSubmit={onSubmit} className="mt-6 space-y-4" noValidate>
-              {view === "criar" && (
-                <Field id="name" label="Nome" error={errors["name"]}>
-                  <Input id="name" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} aria-invalid={!!errors["name"]} placeholder="Como devemos te chamar?" />
-                </Field>
-              )}
-              <Field id="email" label="E-mail" error={errors["email"]}>
-                <Input id="email" type="email" inputMode="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} aria-invalid={!!errors["email"]} placeholder="voce@email.com" />
-              </Field>
-              {view !== "recuperar" && (
-                <Field
-                  id="password"
-                  label="Senha"
-                  error={errors["password"]}
-                  hint={view === "criar" ? "Mínimo de 8 caracteres, com letras e números." : undefined}
-                  extra={
-                    view === "entrar" ? (
-                      <button type="button" onClick={() => setView("recuperar")} className="text-xs text-primary hover:underline">
-                        Esqueci minha senha
-                      </button>
-                    ) : null
-                  }
-                >
-                  <Input id="password" type="password" autoComplete={view === "criar" ? "new-password" : "current-password"} value={password} onChange={(e) => setPassword(e.target.value)} aria-invalid={!!errors["password"]} placeholder="••••••••" />
-                </Field>
-              )}
-              <Button type="submit" variant="hero" size="lg" className="w-full" disabled={busy}>
-                {busy && <Loader2 className="animate-spin" />}
-                {view === "entrar" ? "Entrar" : view === "criar" ? "Criar conta" : "Enviar link"}
-              </Button>
-            </form>
-          )}
-
-          {(view === "entrar" || view === "criar") && (
-            <>
-              <div className="my-6 flex items-center gap-3 text-xs text-muted-foreground">
-                <span className="h-px flex-1 bg-border" /> ou <span className="h-px flex-1 bg-border" />
-              </div>
-              <Button type="button" variant="secondary" size="lg" className="w-full" onClick={onGoogle} disabled={busy}>
-                <GoogleIcon /> Continuar com Google
-              </Button>
-            </>
-          )}
-
-          <p className="mt-8 flex items-start gap-2 text-xs text-muted-foreground">
-            <ShieldCheck className="mt-0.5 size-4 shrink-0 text-primary" />
-            O Kallan nunca pede senha bancária. Conexões com instituições acontecem apenas pelo canal oficial de cada instituição.
-          </p>
-        </div>
-      </main>
-    </div>
+        </main>
+      </div>
+    </AuthStage>
   );
 }
 

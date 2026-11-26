@@ -42,7 +42,6 @@ use the editor.
 - Uploaded images go to the private `media` bucket under `<userId>/<folder>/`; store the path and render via `useSignedImage`. Why: workspace blocks public buckets.
 
 ## Styling
-- Design system v2 is documented in `DESIGN.md` (tokens, surface tiers, type scale). Read it before adding UI.
 - Design system v3 is documented in `DESIGN.md` (from the approved prototype). Light, dark and automatic themes; monochrome with violet only in tiny details. Use semantic tokens from `src/styles.css` (bg-background, bg-surface, bg-surface-2, text-muted-foreground, text-positive, border-border-strong, ring-brand) and the utilities (surface-card, glass, lift, press, animate-rise, tabular, skeleton). The home, shell and Kallan Intelligence chat use the `k-*` classes in `src/kallan.css`. Never hardcode colors; errors use `text-destructive`.
 - Monetary values always render through `<Money />` so the global "hide values" preference applies.
 
