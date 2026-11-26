@@ -36,7 +36,7 @@ export function PageHeader({
             <ChevronLeft className="size-3.5" /> Voltar
           </Link>
         )}
-        {eyebrow && <p className="text-label text-primary-glow">{eyebrow}</p>}
+        {eyebrow && <p className="text-label text-muted-foreground">{eyebrow}</p>}
         <h1 className="text-headline mt-1 md:text-[1.875rem]">{title}</h1>
         {description && <p className="mt-1.5 max-w-xl text-sm text-muted-foreground">{description}</p>}
       </div>

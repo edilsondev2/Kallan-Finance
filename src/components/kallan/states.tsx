@@ -19,7 +19,7 @@ export function EmptyState({
 }) {
   return (
     <div className={cn("surface-card relative overflow-hidden px-6 py-10 text-center animate-rise", className)}>
-      <div className="relative mx-auto flex size-14 items-center justify-center rounded-xl bg-primary/12 text-primary-glow">
+      <div className="relative mx-auto flex size-14 items-center justify-center rounded-xl bg-surface-2 text-foreground">
         <Icon className="size-6" />
       </div>
       <h3 className="text-title relative mt-4">{title}</h3>
@@ -42,7 +42,7 @@ export function ErrorState({
 }) {
   return (
     <div className={cn("surface-card flex flex-col items-center px-6 py-8 text-center", className)} role="alert">
-      <div className="flex size-12 items-center justify-center rounded-xl bg-negative/12 text-negative">
+      <div className="flex size-12 items-center justify-center rounded-xl bg-destructive/12 text-destructive">
         <AlertTriangle className="size-5" />
       </div>
       <h3 className="mt-3 text-sm font-semibold">{title}</h3>

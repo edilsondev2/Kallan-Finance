@@ -1,36 +1,463 @@
-import { Link } from '@tanstack/react-router';
-import { ArrowDownLeft, ArrowUpRight, ArrowRight, Eye, EyeOff, Wallet, CreditCard, ChartNoAxesCombined, Plus, Sparkles, Landmark, Target } from 'lucide-react';
-import { ResponsiveContainer, BarChart, Bar, XAxis, CartesianGrid, Tooltip } from 'recharts';
-import { Button } from '@/components/ui/button';
-import { Page, PageHeader, SectionTitle } from '@/components/kallan/page';
-import { Money } from '@/components/kallan/money';
-import { DemoBadge } from '@/components/kallan/badges';
-import { ProgressBar } from '@/components/kallan/progress-bar';
-import { NotificationBell } from '@/components/kallan/app-shell';
-import { KallanLogo } from '@/components/kallan/logo';
-import { useMyProfile, useHideValues, useSettings } from '@/modules/settings/queries';
-import { firstName, greeting, monthLabel, formatDateTime } from '@/lib/format';
-import { useFinanceData } from '../queries';
-import { financialPosition, monthKeyOf, monthSummary, monthlySeries, categoryBreakdown, goalProgress, generateInsights, dataQuality } from '../calculations';
-import { FinanceEditor } from './editor';
-import { LoadingCards, ErrorState } from '@/components/kallan/states';
-import intelligenceImage from '@/assets/intelligence.jpg';
-import { CategoryIcon } from '@/components/kallan/category-icon';
+import { useState, type CSSProperties, type KeyboardEvent } from "react";
+import { Link } from "@tanstack/react-router";
+import { ArrowDownRight, ArrowUpRight, Bell, ChevronRight, Eye, EyeOff, Landmark, Plus, Sparkles, Target } from "lucide-react";
+import { Page } from "@/components/kallan/page";
+import { Money } from "@/components/kallan/money";
+import { DemoBadge } from "@/components/kallan/badges";
+import { CategoryIcon, categoryColor } from "@/components/kallan/category-icon";
+import { ErrorState, LoadingCards } from "@/components/kallan/states";
+import { UserAvatar } from "@/components/kallan/user-avatar";
+import { useUnreadCount } from "@/components/kallan/app-shell";
+import { useKallanChat } from "@/components/kallan/kallan-chat";
+import { useHideValues, useMyProfile } from "@/modules/settings/queries";
+import { cn } from "@/lib/utils";
+import { firstName, formatBRL, formatDate, formatDateTime, formatPercent, greeting, monthLabel, toNumber } from "@/lib/format";
+import { useFinanceData } from "../queries";
+import {
+  cashVariation,
+  categoryBreakdown,
+  dataQuality,
+  financialPosition,
+  generateInsights,
+  goalProgress,
+  monthKeyOf,
+  monthSummary,
+} from "../calculations";
+import { dueLabel, upcomingInvoices } from "../bills";
+import { FinanceEditor } from "./editor";
+
+const enter = (i: number) => ({ "--n": i }) as CSSProperties;
+
+/** Splits the big balance into R$ / integer / cents, like the approved prototype. */
+function BigValue({ value, hidden }: { value: number; hidden: boolean }) {
+  if (hidden) {
+    return (
+      <div className="k-hx-val" aria-label="Valor oculto">
+        <small>R$</small>••••••
+      </div>
+    );
+  }
+  const [int = "0", dec = "00"] = Math.abs(value).toFixed(2).split(".");
+  return (
+    <div className="k-hx-val" aria-label={formatBRL(value)}>
+      {value < 0 ? "−" : ""}
+      <small>R$</small>
+      {Number(int).toLocaleString("pt-BR")}
+      <span>,{dec}</span>
+    </div>
+  );
+}
+
+function Ring({ progress, size = 66, stroke = 8 }: { progress: number; size?: number; stroke?: number }) {
+  const r = (size - stroke) / 2;
+  const c = 2 * Math.PI * r;
+  const v = Math.max(0, Math.min(1, progress));
+  const h = size / 2;
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-hidden="true">
+      <circle cx={h} cy={h} r={r} fill="none" stroke="var(--surface-3)" strokeWidth={stroke} />
+      <circle
+        cx={h}
+        cy={h}
+        r={r}
+        fill="none"
+        stroke="var(--foreground)"
+        strokeWidth={stroke}
+        strokeLinecap="round"
+        strokeDasharray={`${v * c} ${c}`}
+        transform={`rotate(-90 ${h} ${h})`}
+      />
+    </svg>
+  );
+}
+
+function questionForInsight(id: string | undefined): string {
+  if (!id) return "Como foi meu mês?";
+  if (id.startsWith("goal-")) return "Como estão minhas metas?";
+  if (id.startsWith("cat-up")) return "Onde estou gastando mais?";
+  return "Como foi meu mês?";
+}
 
 export function Overview() {
-  const {data,mode,isLoading,isError,refetch}=useFinanceData(); const {data:profile}=useMyProfile(); const [hidden,toggle]=useHideValues(); const {data:settings}=useSettings();
-  if(isLoading || !data) return <Page><LoadingCards/></Page>; if(isError)return <Page><ErrorState onRetry={refetch}/></Page>;
-  const now=new Date(); const ref=monthKeyOf(now); const position=financialPosition(data.accounts,data.investments,data.invoices,data.cards); const month=monthSummary(data.transactions,ref); const cats=categoryBreakdown(data.transactions,data.categories,ref); const insights=generateInsights(data,ref); const quality=dataQuality(data);
-  const suggestion = settings?.main_goal==='business'?{to:'/negocios' as const,label:'Organize seu negócio'}:settings?.main_goal==='investments'?{to:'/carteira' as const,label:'Acompanhe seus investimentos'}:{to:'/metas' as const,label:'Seu próximo objetivo começa aqui'};
-  return <Page wide><div className="mb-6 flex items-center justify-between lg:hidden"><KallanLogo/><NotificationBell/></div><PageHeader eyebrow="Sua visão financeira" title={`${greeting(now)}, ${firstName(profile?.display_name)||'bem-vindo'}.`} description="Seu dinheiro. Seu negócio. Seu próximo passo." actions={<><NotificationBell className="hidden lg:inline-flex"/><FinanceEditor entity="transaction"><Button><Plus/> Novo registro</Button></FinanceEditor></>}/>
-  <div className="mb-4 flex flex-wrap items-center gap-3">{mode==='demo'&&<DemoBadge/>}<span className="text-xs text-muted-foreground">{monthLabel(now)}</span></div>
-  <div className="grid gap-4 xl:grid-cols-[1.4fr_1fr]">
-    <section className="surface-hero relative overflow-hidden p-6 md:p-8"><div className="flex items-center justify-between"><span className="text-sm text-muted-foreground">Patrimônio financeiro</span><Button variant="ghost" size="icon" onClick={toggle} aria-label={hidden?'Mostrar valores':'Ocultar valores'} title={hidden?'Mostrar valores':'Ocultar valores'}>{hidden?<EyeOff/>:<Eye/>}</Button></div><Money value={position.netWorth} className="mt-3 block text-4xl font-semibold md:text-5xl"/><div className="mt-5 flex items-center gap-2 text-xs text-muted-foreground"><span className="size-1.5 rounded-full bg-primary"/>{mode==='demo'?'Posição ilustrativa':quality.lastUpdate?`Atualizado em ${formatDateTime(quality.lastUpdate)}`:'Ainda não há saldos registrados'}</div><div className="mt-7 flex flex-wrap gap-6 border-t border-border pt-5"><div><p className="mb-1 text-xs text-muted-foreground">Ativos</p><Money value={position.assets} className="text-lg"/></div><div><p className="mb-1 text-xs text-muted-foreground">Faturas em aberto e vencidas</p><Money value={position.obligations} className="text-lg" tone={position.overdueInvoices>0?'negative':'neutral'}/></div></div></section>
-    <div className="grid grid-cols-2 gap-3">{[{label:'Saldo disponível',value:position.availableCash,icon:Wallet},{label:'Faturas atuais',value:position.openInvoices,icon:CreditCard},{label:'Investimentos',value:position.investmentsTotal,icon:ChartNoAxesCombined}].map(item=><Link key={item.label} to="/carteira" className="surface-card lift flex min-w-0 flex-col p-4 md:p-5"><item.icon className="mb-4 size-5 text-primary"/><span className="text-xs text-muted-foreground">{item.label}</span><Money value={item.value} className="mt-1 text-lg font-semibold md:text-xl"/></Link>)}<Link to="/open-finance" className="surface-card lift p-4 md:p-5"><Landmark className="mb-4 size-5 text-info"/><p className="text-xs text-muted-foreground">Instituições conectadas</p><p className="mt-1 text-2xl font-semibold">{new Set(data.accounts.filter(a=>a.source==='open_finance').map(a=>a.connection_id)).size}</p><span className="text-xs text-muted-foreground">Open Finance</span></Link></div>
-  </div>
-  <div className="mt-7 grid gap-7 xl:grid-cols-[1.4fr_1fr]"><section><SectionTitle title="Seu mês, em perspectiva"/><div className="flex flex-wrap gap-6 border-y border-border py-5">{[{label:'Entradas',value:month.income,icon:ArrowDownLeft,tone:'positive' as const},{label:'Saídas',value:month.expenses,icon:ArrowUpRight,tone:'negative' as const},{label:'Resultado',value:month.result,icon:ChartNoAxesCombined,tone:'auto' as const}].map(x=><div key={x.label} className="min-w-0 flex-1"><p className="flex items-center gap-1.5 text-xs text-muted-foreground"><x.icon className="size-3.5"/>{x.label}</p><Money value={x.value} tone={x.tone} className="mt-2 block text-lg font-medium"/></div>)}</div><div className="mt-5 h-48 w-full" aria-label="Entradas e saídas nos últimos seis meses"><ResponsiveContainer width="100%" height="100%"><BarChart data={monthlySeries(data.transactions,ref)} barGap={5}><CartesianGrid stroke="var(--border)" vertical={false}/><XAxis dataKey="label" axisLine={false} tickLine={false} tick={{fill:'var(--muted-foreground)',fontSize:11}}/><Tooltip cursor={{fill:'var(--surface-2)'}} content={({active,payload,label})=>active?<div className="rounded-lg border border-border bg-surface p-3 text-xs"><p>{label}</p>{payload?.map(p=><p key={String(p.dataKey)}>{p.dataKey==='income'?'Entradas':'Saídas'}: <Money value={Number(p.value)}/></p>)}</div>:null}/><Bar dataKey="income" fill="var(--primary)" radius={[4,4,0,0]}/><Bar dataKey="expenses" fill="var(--surface-3)" radius={[4,4,0,0]}/></BarChart></ResponsiveContainer></div><div className="flex justify-center gap-5 text-xs text-muted-foreground"><span className="flex items-center gap-2"><i className="size-2 rounded-full bg-primary"/>Entradas</span><span className="flex items-center gap-2"><i className="size-2 rounded-full bg-surface-3"/>Saídas</span></div></section>
-  <section><SectionTitle title="Gastos por categoria" action={<Button variant="link" size="sm" asChild><Link to="/movimentacoes">Ver todos <ArrowRight/></Link></Button>}/>{cats.length?cats.slice(0,5).map(c=><Link key={c.categoryId??'none'} to="/movimentacoes" search={{category:c.categoryId??'none'}} className="flex items-center gap-3 border-b border-border py-3"><CategoryIcon icon={c.icon} color={c.color}/><div className="min-w-0 flex-1"><div className="mb-2 flex items-center justify-between gap-2"><span className="truncate text-xs">{c.name}</span><Money value={c.total} className="text-xs"/></div><ProgressBar value={c.share}/></div><span className="w-9 text-right text-xs text-muted-foreground">{Math.round(c.share*100)}%</span></Link>):<p className="py-10 text-sm text-muted-foreground">Nenhuma despesa registrada neste mês.</p>}</section></div>
-  <section className="relative mt-8 overflow-hidden rounded-2xl"><img src={intelligenceImage} alt="Mulher analisando suas finanças" className="absolute inset-0 h-full w-full object-cover object-right"/><div className="absolute inset-0 bg-fade-left"/><div className="relative max-w-md px-6 py-8"><Sparkles className="mb-3 size-6 text-primary-glow"/><h2 className="text-xl font-semibold">Kallan Intelligence</h2><p className="mt-2 text-sm text-muted-foreground">Descubra o que seus números estão tentando mostrar.</p><Button asChild className="mt-5" size="sm"><Link to="/inteligencia">Analisar minhas finanças <ArrowRight/></Link></Button></div></section>
-  <div className="mt-7 grid gap-6 md:grid-cols-2"><section><SectionTitle title="O que merece sua atenção"/>{insights.length?insights.slice(0,2).map(i=><div key={i.id} className="mb-3 border-l-2 border-primary pl-4 py-2"><p className="text-sm font-medium">{i.title}</p><p className="mt-1 text-xs leading-relaxed text-muted-foreground">{i.explanation}</p><Button variant="link" size="sm" asChild className="mt-1 px-0"><Link to="/movimentacoes">Ver detalhes <ArrowRight/></Link></Button></div>):<p className="py-4 text-sm text-muted-foreground">Mais registros e histórico permitem identificar tendências com segurança.</p>}</section><section><SectionTitle title="Seus próximos passos" action={<Button variant="link" size="sm" asChild><Link to="/metas">Metas <ArrowRight/></Link></Button>}/>{data.goals.filter(g=>g.status==='active').slice(0,2).map(g=><Link key={g.id} to="/metas" className="mb-3 block surface-card p-4"><div className="mb-3 flex justify-between gap-2"><span className="text-sm">{g.title}</span><span className="text-xs text-positive">{Math.round(goalProgress(g)*100)}%</span></div><ProgressBar value={goalProgress(g)}/></Link>)}<Link to={suggestion.to} className="flex items-center gap-3 py-3 text-sm text-muted-foreground"><Target className="size-5 text-primary"/>{suggestion.label}<ArrowRight className="ml-auto size-4"/></Link></section></div>
-  </Page>;
+  const { data, mode, isLoading, isError, refetch } = useFinanceData();
+  const { data: profile } = useMyProfile();
+  const { data: unread = 0 } = useUnreadCount();
+  const [hidden, toggleHidden] = useHideValues();
+  const { openChat } = useKallanChat();
+  const [activeCat, setActiveCat] = useState<string | null>(null);
+  const [allCats, setAllCats] = useState(false);
+
+  if (isError) return <Page><ErrorState onRetry={refetch} /></Page>;
+  if (isLoading || !data) return <Page><LoadingCards /></Page>;
+
+  const now = new Date();
+  const ref = monthKeyOf(now);
+  const position = financialPosition(data.accounts, data.investments, data.invoices, data.cards);
+  const month = monthSummary(data.transactions, ref);
+  const cats = categoryBreakdown(data.transactions, data.categories, ref);
+  const insights = generateInsights(data, ref);
+  const quality = dataQuality(data);
+  const variation = cashVariation(data.snapshots, data.accounts, 30, now);
+  const bills = upcomingInvoices(data, now);
+  const goals = data.goals.filter((g) => g.status === "active");
+  const catById = new Map(data.categories.map((c) => [c.id, c]));
+  const recent = [...data.transactions]
+    .sort((a, b) => b.occurred_on.localeCompare(a.occurred_on) || b.created_at.localeCompare(a.created_at))
+    .slice(0, 4);
+
+  const fmt = (n: number) => (hidden ? "R$ ••••••" : formatBRL(n));
+  const name = firstName(profile?.display_name);
+  const top = insights[0];
+  const used = month.income > 0 ? Math.min(1, month.expenses / month.income) : 0;
+  const ratio = variation && variation.previous !== 0 ? variation.change / Math.abs(variation.previous) : null;
+
+  // Donut
+  const R = 62;
+  const C = 2 * Math.PI * R;
+  const catKey = (c: { categoryId: string | null }) => c.categoryId ?? "none";
+  const selected = activeCat ? cats.find((c) => catKey(c) === activeCat) : undefined;
+  let offset = 0;
+  const segments = cats.map((c) => {
+    const len = c.share * C;
+    const vis = Math.max(len - 3, 0.5);
+    const key = catKey(c);
+    const on = activeCat === key;
+    const el = (
+      <circle
+        key={key}
+        className={cn("seg", activeCat && !on && "dim")}
+        cx={80}
+        cy={80}
+        r={R}
+        fill="none"
+        style={{ stroke: categoryColor(c.color) }}
+        strokeWidth={on ? 24 : 20}
+        strokeDasharray={`${vis} ${C - vis}`}
+        strokeDashoffset={-offset}
+        transform="rotate(-90 80 80)"
+        tabIndex={0}
+        role="button"
+        aria-label={`${c.name}: ${fmt(c.total)}`}
+        onClick={() => setActiveCat(on ? null : key)}
+        onKeyDown={(e: KeyboardEvent<SVGCircleElement>) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            setActiveCat(on ? null : key);
+          }
+        }}
+      />
+    );
+    offset += len;
+    return el;
+  });
+  const biggest = cats[0];
+  const visibleCats = allCats ? cats : cats.slice(0, 4);
+
+  const pillText = ratio !== null
+    ? `Saldo em contas ${ratio >= 0 ? "+" : "−"}${formatPercent(Math.abs(ratio))} em 30 dias`
+    : mode === "demo"
+      ? "Posição ilustrativa"
+      : quality.lastUpdate
+        ? `Atualizado em ${formatDateTime(quality.lastUpdate)}`
+        : "Ainda não há saldos registrados";
+  const PillIcon = ratio !== null && ratio < 0 ? ArrowDownRight : ArrowUpRight;
+
+  return (
+    <div className="k-home k-enter">
+      <div style={enter(0)}>
+        <div className="k-hx">
+          <div className="k-hx-top">
+            <Link to="/perfil" className="k-hx-id" aria-label="Abrir perfil">
+              <span className="k-hx-av">
+                <UserAvatar name={profile?.display_name} path={profile?.avatar_url} className="size-full bg-transparent text-[19px] text-[#0a0a0b]" />
+              </span>
+              <span className="k-hx-hi">
+                <small>Bem-vindo de volta</small>
+                <b>{greeting(now)}, {name || "bem-vindo"}</b>
+              </span>
+            </Link>
+            <Link to="/notificacoes" className="k-hx-bell" aria-label={unread ? `Notificações, ${unread} não lidas` : "Notificações"}>
+              <Bell />
+              {unread > 0 && <i className="k-hx-dot" />}
+            </Link>
+          </div>
+
+          <div className="k-hx-bal">
+            <div className="k-hx-lab">
+              Patrimônio financeiro
+              <button type="button" className="k-hx-eye" onClick={toggleHidden} aria-label={hidden ? "Mostrar valores" : "Ocultar valores"} aria-pressed={hidden}>
+                {hidden ? <EyeOff /> : <Eye />}
+              </button>
+            </div>
+            <BigValue value={position.netWorth} hidden={hidden} />
+            <div className="k-hx-pill">
+              <PillIcon />
+              {pillText}
+            </div>
+          </div>
+
+          <div className="k-hx-acts">
+            <FinanceEditor entity="transaction">
+              <button type="button" className="k-hx-act pri">
+                <span className="k-hx-ai"><Plus /></span>
+                <span>Registrar</span>
+              </button>
+            </FinanceEditor>
+            <Link to="/open-finance" className="k-hx-act">
+              <span className="k-hx-ai"><Landmark /></span>
+              <span>Conectar</span>
+            </Link>
+            <Link to="/metas" className="k-hx-act">
+              <span className="k-hx-ai"><Target /></span>
+              <span>Metas</span>
+            </Link>
+            <button type="button" className="k-hx-act" onClick={() => openChat()}>
+              <span className="k-hx-ai"><Sparkles /></span>
+              <span>Kallan</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div style={enter(1)} className="k-assets">
+        <div className="k-card">
+          <div className="k-sum">
+            <div>
+              <small>Em contas</small>
+              <b><Money value={position.availableCash} /></b>
+            </div>
+            <div>
+              <small>Investido</small>
+              <b><Money value={position.investmentsTotal} /></b>
+            </div>
+          </div>
+          {position.obligations > 0 && (
+            <p className="px-6 pb-4 text-[13px] text-muted-foreground">
+              O patrimônio já desconta {fmt(position.obligations)} em faturas
+              {position.overdueInvoices > 0 ? `, sendo ${fmt(position.overdueInvoices)} vencidas` : " em aberto"}.
+            </p>
+          )}
+        </div>
+      </div>
+
+      <div style={enter(2)}>
+        {mode === "demo" && (
+          <div className="mt-4">
+            <DemoBadge />
+          </div>
+        )}
+        <button type="button" className="k-insight" onClick={() => openChat(questionForInsight(top?.id))}>
+          <span className="k-orb"><Sparkles /></span>
+          <span className="k-insight-body">
+            <b>{top ? top.title : "Kallan Intelligence"}</b>
+            <p>
+              {top
+                ? top.explanation
+                : "Pergunte sobre seus gastos, vencimentos e metas. Com mais registros, a Kallan aponta tendências com segurança."}
+            </p>
+          </span>
+          <ChevronRight />
+        </button>
+      </div>
+
+      <section style={enter(3)}>
+        <div className="k-sec">
+          <h2>Resumo do mês</h2>
+          <small>{monthLabel(now)}</small>
+        </div>
+        <div className="k-card k-month">
+          <div className="k-m-top">
+            <div>
+              <small><i className="k-dt in" />Entradas</small>
+              <b><Money value={month.income} /></b>
+            </div>
+            <div>
+              <small><i className="k-dt out" />Saídas</small>
+              <b><Money value={month.expenses} /></b>
+            </div>
+          </div>
+          <div className="k-m-bar" role="img" aria-label={`Você gastou ${Math.round(used * 100)}% do que recebeu`}>
+            <i style={{ width: `${(used * 100).toFixed(1)}%` }} />
+          </div>
+          <div className="k-m-foot">
+            <span>{month.income > 0 ? `Você gastou ${Math.round(used * 100)}% do que recebeu` : "Sem entradas neste mês"}</span>
+            <b>
+              {month.result < 0 ? "−" : "+"} <Money value={Math.abs(month.result)} />
+            </b>
+          </div>
+        </div>
+      </section>
+
+      <section style={enter(4)}>
+        <div className="k-sec">
+          <h2>Seus gastos</h2>
+          <button type="button" className="k-lnk" onClick={() => openChat("Onde estou gastando mais?")}>
+            Perguntar à Kallan
+          </button>
+        </div>
+        {cats.length ? (
+          <div className="k-card">
+            <div className="k-donut-top">
+              <div className="k-donut">
+                <svg width="160" height="160" viewBox="0 0 160 160" role="group" aria-label="Gastos por categoria">
+                  <circle cx={80} cy={80} r={R} fill="none" style={{ stroke: "var(--surface-2)" }} strokeWidth={20} />
+                  {segments}
+                </svg>
+                <div className="k-donut-c">
+                  {selected ? (
+                    <>
+                      <small>{selected.name}</small>
+                      <b>{fmt(selected.total)}</b>
+                      <small>{formatPercent(selected.share)} das saídas</small>
+                    </>
+                  ) : (
+                    <>
+                      <small>Saídas do mês</small>
+                      <b>{fmt(month.expenses)}</b>
+                      <small>{cats.length} {cats.length === 1 ? "categoria" : "categorias"}</small>
+                    </>
+                  )}
+                </div>
+              </div>
+              <div className="k-donut-aside">
+                <small>Maior gasto</small>
+                <b>{biggest ? biggest.name : "—"}</b>
+                <small>{biggest ? `${formatPercent(biggest.share)} das saídas` : "Sem saídas ainda"}</small>
+              </div>
+            </div>
+            <div className="k-catrows">
+              {visibleCats.map((c) => {
+                const key = catKey(c);
+                return (
+                  <button key={key} type="button" className={cn("k-catrow", activeCat === key && "on")} onClick={() => setActiveCat(activeCat === key ? null : key)}>
+                    <CategoryIcon icon={c.icon} color={c.color} className="size-[42px] rounded-[14px]" />
+                    <span className="block min-w-0">
+                      <span className="k-cr-top">
+                        <span>{c.name}</span>
+                        <span className="tabular">{fmt(c.total)}</span>
+                      </span>
+                      <span className="k-bar block">
+                        <i style={{ width: `${(c.share * 100).toFixed(1)}%`, background: categoryColor(c.color) }} />
+                      </span>
+                    </span>
+                    <span className="k-cr-pct">{Math.round(c.share * 100)}%</span>
+                  </button>
+                );
+              })}
+              {cats.length > 4 && (
+                <button type="button" className="k-more" onClick={() => setAllCats(!allCats)}>
+                  {allCats ? "Mostrar menos" : `Ver todas as ${cats.length} categorias`}
+                </button>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="k-card k-empty">
+            <b>Nenhuma despesa registrada neste mês.</b>
+            Registre suas saídas para ver para onde o dinheiro vai.
+          </div>
+        )}
+      </section>
+
+      <div style={enter(5)} className="k-cols">
+        <section>
+          <div className="k-sec">
+            <h2>A vencer</h2>
+            {bills.length > 0 && (
+              <small>
+                <Money value={bills.reduce((s, b) => s + b.amount, 0)} /> no total
+              </small>
+            )}
+          </div>
+          <div className="k-card k-list">
+            {bills.length ? (
+              bills.slice(0, 3).map((b) => (
+                <Link key={b.id} to="/carteira" className="k-tx">
+                  <CategoryIcon icon="receipt" color="slate" className="size-[42px] rounded-[14px]" />
+                  <div className="k-tx-main">
+                    <div className="k-tx-name">{b.name}</div>
+                    <span className={cn("k-due", (b.overdue || b.days <= 5) && "soon")}>
+                      {dueLabel(b.days)} · {formatDate(b.due, { day: "2-digit", month: "short" })}
+                    </span>
+                  </div>
+                  <div className="k-tx-amt"><Money value={b.amount} /></div>
+                </Link>
+              ))
+            ) : (
+              <div className="k-empty">
+                <b>Tudo em dia.</b>
+                Nenhuma fatura em aberto.
+              </div>
+            )}
+          </div>
+        </section>
+
+        <section>
+          <div className="k-sec">
+            <h2>Movimentações</h2>
+            <Link to="/movimentacoes" className="k-lnk">Ver extrato</Link>
+          </div>
+          <div className="k-card k-list">
+            {recent.length ? (
+              recent.map((t) => {
+                const cat = t.category_id ? catById.get(t.category_id) : undefined;
+                const income = t.direction === "in";
+                return (
+                  <div key={t.id} className="k-tx">
+                    <CategoryIcon icon={cat?.icon} color={cat?.color} className="size-[42px] rounded-[14px]" />
+                    <div className="k-tx-main">
+                      <div className="k-tx-name">{t.description}</div>
+                      <div className="k-tx-meta">
+                        {formatDate(t.occurred_on, { day: "2-digit", month: "short" })}
+                        {t.institution_name ? ` · ${t.institution_name}` : ""} · {cat?.name ?? "Sem categoria"}
+                      </div>
+                    </div>
+                    <div className={cn("k-tx-amt", income && "in")}>
+                      {income ? "+" : "−"} <Money value={Math.abs(toNumber(t.amount))} />
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="k-empty">
+                <b>Nenhuma movimentação ainda.</b>
+                Use o botão Registrar para anotar a primeira.
+              </div>
+            )}
+          </div>
+        </section>
+      </div>
+
+      <section style={enter(6)}>
+        <div className="k-sec">
+          <h2>Suas metas</h2>
+          <Link to="/metas" className="k-lnk">Ver todas</Link>
+        </div>
+        {goals.length ? (
+          <div className="k-strip">
+            {goals.map((g) => {
+              const p = goalProgress(g);
+              return (
+                <Link key={g.id} to="/metas" className="k-gcard">
+                  <span className="k-ringbox">
+                    <Ring progress={p} />
+                    <b>{Math.round(p * 100)}%</b>
+                  </span>
+                  <span>
+                    <b>{g.title}</b>
+                    <small>{fmt(toNumber(g.current_amount))} de {fmt(toNumber(g.target_amount))}</small>
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
+        ) : (
+          <Link to="/metas" className="k-card k-empty block">
+            <b>Defina seu primeiro objetivo.</b>
+            Uma meta com valor e prazo ajuda a Kallan a mostrar o caminho.
+          </Link>
+        )}
+      </section>
+    </div>
+  );
 }

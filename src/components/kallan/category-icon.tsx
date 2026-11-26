@@ -27,7 +27,7 @@ export function categoryColor(name: string | null | undefined): string {
   return CATEGORY_COLOR[name ?? "slate"] ?? "var(--chart-8)";
 }
 
-export function CategoryIcon({ icon, color, className }: { icon?: string | null; color?: string | null; className?: string }) {
+export function CategoryIcon({ icon, color, className }: { icon?: string | null | undefined; color?: string | null | undefined; className?: string | undefined }) {
   const Icon = ICONS[icon ?? "circle"] ?? Circle;
   const c = categoryColor(color);
   return (

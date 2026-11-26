@@ -93,7 +93,7 @@ function ResetPasswordPage() {
               <Label htmlFor="pw2" className="text-xs text-muted-foreground">Confirme a senha</Label>
               <Input id="pw2" type="password" autoComplete="new-password" value={confirm} onChange={(e) => setConfirm(e.target.value)} />
             </div>
-            {error && <p className="text-xs text-negative">{error}</p>}
+            {error && <p className="text-xs text-destructive">{error}</p>}
             <Button type="submit" variant="hero" className="w-full" disabled={busy}>
               {busy && <Loader2 className="animate-spin" />} Salvar nova senha
             </Button>

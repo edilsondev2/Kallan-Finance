@@ -72,12 +72,16 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
   );
 }
 
+/** Applies the saved theme before first paint (no flash). "auto" = follow the device. */
+const THEME_INIT_SCRIPT = `(function(){try{var p=localStorage.getItem('kf-theme');var r=document.documentElement;if(p==='light'||p==='dark'){r.setAttribute('data-theme',p)}var d=p==='dark'||(p!=='light'&&window.matchMedia('(prefers-color-scheme: dark)').matches);r.classList.toggle('dark',d)}catch(e){}})();`;
+
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   head: () => ({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
-      { name: "theme-color", content: "#070A08" },
+      { name: "theme-color", content: "#F4F4F5", media: "(prefers-color-scheme: light)" },
+      { name: "theme-color", content: "#050506", media: "(prefers-color-scheme: dark)" },
       { title: "Kallan Finance — Seu dinheiro. Seu negócio. Seu próximo passo." },
       {
         name: "description",
@@ -94,11 +98,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
         rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Manrope:wght@400..800&display=swap",
+        href: "https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=DM+Sans:opsz,wght@9..40,400..700&display=swap",
       },
       { rel: "stylesheet", href: appCss },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
     ],
+    scripts: [{ children: THEME_INIT_SCRIPT }],
   }),
   shellComponent: RootShell,
   component: RootComponent,
@@ -108,7 +113,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="pt-BR" className="dark">
+    <html lang="pt-BR" suppressHydrationWarning>
       <head>
         <HeadContent />
       </head>

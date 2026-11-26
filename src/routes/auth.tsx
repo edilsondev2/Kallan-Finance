@@ -278,7 +278,7 @@ function Field({
         {extra}
       </div>
       {children}
-      {error ? <p className="text-xs text-negative">{error}</p> : hint ? <p className="text-xs text-muted-foreground">{hint}</p> : null}
+      {error ? <p className="text-xs text-destructive">{error}</p> : hint ? <p className="text-xs text-muted-foreground">{hint}</p> : null}
     </div>
   );
 }

@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils";
 
 export function ProgressBar({ value, className, tone = "primary" }: { value: number; className?: string; tone?: "primary" | "warning" | "negative" }) {
   const pct = Math.max(0, Math.min(1, value));
-  const bar = tone === "warning" ? "bg-warning" : tone === "negative" ? "bg-negative" : "bg-emerald-gradient";
+  const bar = tone === "warning" ? "bg-warning" : tone === "negative" ? "bg-destructive" : "bg-primary";
   return (
     <div
       className={cn("h-2.5 w-full overflow-hidden rounded-full bg-surface-3", className)}
