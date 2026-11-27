@@ -1,5 +1,13 @@
-/** Implement only against a contracted provider's official documentation. */
-export interface OpenFinanceInstitution { id: string; name: string; products: string[]; imageUrl?: string | null | undefined; sandbox?: boolean | undefined }
-
-/** Malvo (https://docs.malvo.io) is configured through the server-side secrets `Malvo` and `Malvo2`. */
-export const OPEN_FINANCE_READINESS = { available: true, provider: 'Malvo', missing: [] as string[] } as const;
+export interface OpenFinanceInstitution { id: string; name: string; products: string[]; sandbox?: boolean | undefined }
+export interface ProviderItem {
+  id: string; status: string; executionStatus?: string | null; clientUserId?: string | null;
+  connector: { id: number; name: string; isSandbox?: boolean };
+  products?: string[]; lastUpdatedAt?: string | null; consentExpiresAt?: string | null;
+}
+/** Screens use authenticated functions; vendor-specific REST stays in the adapter. */
+export interface OpenFinanceProvider {
+  listInstitutions(): Promise<OpenFinanceInstitution[]>;
+  createConnectToken(userId: string): Promise<{ connectToken: string }>;
+  getItem(itemId: string): Promise<ProviderItem>;
+  revokeConsent(itemId: string): Promise<void>;
+}

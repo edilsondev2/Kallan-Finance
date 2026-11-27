@@ -14,28 +14,10 @@ type Step = "bank" | "review" | "authorizing" | "verifying" | "done" | "failed";
 
 const norm = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 
-function hashOf(s: string): number {
-  let h = 0;
-  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
-  return h;
-}
-
-/** Provider logo when available; otherwise initials on a stable violet-gray gradient. */
-export function InstitutionAvatar({ name, size = 52, imageUrl }: { name: string; size?: number; imageUrl?: string | null | undefined }) {
-  const words = name.replace(/\(.*?\)/g, "").trim().split(/\s+/);
-  const initials = ((words[0]?.charAt(0) ?? "") + (words[1]?.charAt(0) ?? "")).toUpperCase();
-  const h = hashOf(name);
-  const style = {
-    width: size,
-    height: size,
-    fontSize: size * 0.34,
-    background: imageUrl ? "#fff" : `linear-gradient(145deg, hsl(${255 + (h % 30)} 38% ${30 + (h % 10)}%), hsl(${250 + (h % 40)} 30% ${14 + (h % 6)}%))`,
-  } as CSSProperties;
-  return (
-    <span className="k-cn-av overflow-hidden" style={style} aria-hidden="true">
-      {imageUrl ? <img src={imageUrl} alt="" className="size-full object-contain p-2" loading="lazy" /> : initials}
-    </span>
-  );
+export function InstitutionAvatar({ name, size = 52 }: { name: string; size?: number }) {
+  const words = name.trim().split(/\s+/);
+  const initials = ((words[0]?.charAt(0) ?? '') + (words[1]?.charAt(0) ?? '')).toUpperCase();
+  return <span className="k-cn-av bg-surface-2 text-foreground" style={{ width: size, height: size, fontSize: size * .34 }} aria-hidden="true">{initials}</span>;
 }
 
 export function ConnectFlow({ onClose }: { onClose: () => void }) {
@@ -95,12 +77,12 @@ export function ConnectFlow({ onClose }: { onClose: () => void }) {
     if (!picked) return;
     setStep("authorizing");
     try {
-      const { connectToken } = await tokenFn({ data: { returnUrl: window.location.href } });
+      const { connectToken } = await tokenFn({ data: { institutionId: picked.id } });
       let finished = false;
       await openMalvoWidget({
         connectToken,
         connectorId: Number(picked.id) || undefined,
-        includeSandbox: !!picked.sandbox,
+        includeSandbox: false,
         onSuccess: (itemId) => { finished = true; void verify(itemId); },
         onError: () => { finished = true; setStep("failed"); },
         onClose: () => { if (!finished) setStep("review"); },
@@ -118,9 +100,9 @@ export function ConnectFlow({ onClose }: { onClose: () => void }) {
       <div className="k-px" aria-hidden="true" />
       <div className="k-cn-col">
         <header className="k-cn-head">
-          <button type="button" className="k-icon-btn" onClick={() => (sheetOpen ? back() : onClose())} aria-label={sheetOpen ? "Voltar" : "Fechar"}>
+          <Button variant="ghost" type="button" className="k-icon-btn" onClick={() => (sheetOpen ? back() : onClose())} aria-label={sheetOpen ? "Voltar" : "Fechar"}>
             {sheetOpen ? <ArrowLeft /> : <X />}
-          </button>
+          </Button>
           <div className="k-cn-steps" role="progressbar" aria-valuemin={1} aria-valuemax={3} aria-valuenow={stepIndex + 1} aria-label={`Etapa ${stepIndex + 1} de 3`}>
             {[0, 1, 2].map((i) => (
               <i key={i} className={cn(i <= stepIndex && "on")} />
@@ -139,28 +121,28 @@ export function ConnectFlow({ onClose }: { onClose: () => void }) {
             <Search aria-hidden="true" />
             <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Buscar instituição" aria-label="Buscar instituição" autoComplete="off" />
             {query && (
-              <button type="button" onClick={() => setQuery("")} aria-label="Limpar busca">
+              <Button variant="ghost" type="button" onClick={() => setQuery("")} aria-label="Limpar busca">
                 <X />
-              </button>
+              </Button>
             )}
           </label>
-          <button type="button" className={cn("k-icon-btn k-cn-filter", (filtersOpen || product) && "on")} onClick={() => setFiltersOpen((v) => !v)} aria-label="Filtrar por tipo de dado" aria-expanded={filtersOpen}>
+          <Button variant="ghost" type="button" className={cn("k-icon-btn k-cn-filter", (filtersOpen || product) && "on")} onClick={() => setFiltersOpen((v) => !v)} aria-label="Filtrar por tipo de dado" aria-expanded={filtersOpen}>
             <SlidersHorizontal />
             {product && <i />}
-          </button>
+          </Button>
         </div>
 
         {filtersOpen && (
           <div className="k-cn-filters k-swap" role="group" aria-label="Filtrar por tipo de dado">
             {products.map((p) => (
-              <button key={p} type="button" className={cn("k-cn-pill", product === p && "on")} aria-pressed={product === p} onClick={() => setProduct(product === p ? null : p)}>
+              <Button variant="ghost" key={p} type="button" className={cn("k-cn-pill", product === p && "on")} aria-pressed={product === p} onClick={() => setProduct(product === p ? null : p)}>
                 {p}
-              </button>
+              </Button>
             ))}
             {product && (
-              <button type="button" className="k-cn-pill clear" onClick={() => setProduct(null)}>
+              <Button variant="ghost" type="button" className="k-cn-pill clear" onClick={() => setProduct(null)}>
                 Limpar
-              </button>
+              </Button>
             )}
           </div>
         )}
@@ -171,25 +153,25 @@ export function ConnectFlow({ onClose }: { onClose: () => void }) {
           ) : institutions.isError ? (
             <div className="k-cn-empty">
               <b>Não foi possível carregar as instituições.</b>
-              <button type="button" className="k-lnk" onClick={() => void institutions.refetch()}>
+              <Button variant="ghost" type="button" className="k-lnk" onClick={() => void institutions.refetch()}>
                 Tentar novamente
-              </button>
+              </Button>
             </div>
           ) : shown.length ? (
             shown.map((inst, i) => (
-              <button key={inst.id} type="button" className="k-cn-bank k-up" style={{ "--n": Math.min(i, 10) } as CSSProperties} onClick={() => { setPicked(inst); setStep("review"); }}>
-                <InstitutionAvatar name={inst.name} imageUrl={inst.imageUrl} />
+              <Button variant="ghost" key={inst.id} type="button" className="k-cn-bank k-up" style={{ "--n": Math.min(i, 10) } as CSSProperties} onClick={() => { setPicked(inst); setStep("review"); }}>
+                <InstitutionAvatar name={inst.name}  />
                 <span className="k-cn-bank-body">
                   <b>{inst.name}</b>
                   <small>{inst.sandbox ? "Ambiente de testes · " : ""}{inst.products.join(" · ")}</small>
                 </span>
                 <ChevronRight aria-hidden="true" />
-              </button>
+              </Button>
             ))
           ) : (
             <div className="k-cn-empty">
-              <b>Nenhuma instituição encontrada.</b>
-              Confira o nome ou limpe os filtros.
+              <b>{all.length ? "Nenhuma instituição encontrada." : "Conexões reais ainda não habilitadas."}</b>
+              {all.length ? "Confira o nome ou limpe os filtros." : "A Malvo autenticou suas credenciais, mas retornou apenas instituições de teste. Nenhuma será exibida como banco real."}
             </div>
           )}
         </div>
@@ -206,7 +188,7 @@ export function ConnectFlow({ onClose }: { onClose: () => void }) {
                   <div className="k-cn-link" aria-hidden="true">
                     <span className="k-cn-kmark"><KallanGlyph /></span>
                     <span className="k-cn-line"><i /><ArrowLeftRight /></span>
-                    <InstitutionAvatar name={picked.name} size={64} imageUrl={picked.imageUrl} />
+                    <InstitutionAvatar name={picked.name} size={64}  />
                   </div>
                   <div className="k-cn-card">
                     <Building2 aria-hidden="true" />

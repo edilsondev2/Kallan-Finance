@@ -1,9 +1,14 @@
 import { useState, type CSSProperties } from "react";
-import { Clock, KeyRound, Landmark, ShieldCheck, Unplug } from "lucide-react";
+import { Clock, KeyRound, Landmark, ShieldCheck, Unplug, RefreshCw } from "lucide-react";
 import { Page } from "@/components/kallan/page";
 import { Button } from "@/components/ui/button";
 import { ConnectFlow } from "./connect-flow";
-import { OPEN_FINANCE_READINESS } from "./provider";
+import { useSuspenseQuery, useQueryClient } from '@tanstack/react-query';
+import { useServerFn } from '@tanstack/react-start';
+import { useUserId } from '@/modules/auth/auth-context';
+import { toast } from 'sonner';
+import { institutionsOptions, connectionsOptions } from './queries';
+import { refreshConnection, revokeConnection } from './open-finance.functions';
 
 const TRUST = [
   { icon: ShieldCheck, title: "Somente leitura", text: "Contas, saldos, movimentações, faturas e investimentos, conforme o que cada instituição compartilhar." },
@@ -13,7 +18,24 @@ const TRUST = [
 
 export function ConnectionsPage() {
   const [open, setOpen] = useState(false);
-  const available = OPEN_FINANCE_READINESS.available;
+  const userId = useUserId();
+  const qc = useQueryClient();
+  const { data: institutions } = useSuspenseQuery(institutionsOptions(userId));
+  const { data: connections } = useSuspenseQuery(connectionsOptions(userId));
+  const refresh = useServerFn(refreshConnection);
+  const revoke = useServerFn(revokeConnection);
+  const [busy, setBusy] = useState<string | null>(null);
+  const available = institutions.length > 0;
+  async function action(id: string, remove: boolean) {
+    if (remove && !window.confirm('Revogar o compartilhamento desta instituição?')) return;
+    setBusy(id);
+    try {
+      await (remove ? revoke : refresh)({ data: { connectionId: id } });
+      await qc.invalidateQueries({ queryKey: ['of-connections', userId] });
+    } catch { toast.error('Não foi possível atualizar a conexão.'); }
+    finally { setBusy(null); }
+  }
+  const labels: Record<string, string> = { completed: 'Autorizada pelo provedor', verifying: 'Dados parcialmente disponíveis', syncing: 'Sincronizando no provedor', connecting: 'Conectando', awaiting_authorization: 'Aguardando autorização', failed: 'Falha', consent_expired: 'Consentimento encerrado', revoked: 'Revogada', preparing: 'Preparando' };
 
   return (
     <Page>
@@ -29,18 +51,14 @@ export function ConnectionsPage() {
         <h1>Conecte seus bancos, com você no controle</h1>
         <p className="k-cn-hero-text">Uma visão consolidada das suas contas, com autorização oficial e somente para leitura.</p>
         <Button variant="hero" size="lg" onClick={() => setOpen(true)}>
-          {available ? "Conectar instituição" : "Ver como será a conexão"}
+          {available ? "Conectar instituição" : "Consultar instituições"}
         </Button>
         {!available && (
           <div className="k-cn-status">
             <p>
-              <Clock aria-hidden="true" /> Conexões reais aguardando configuração do provedor
+              <Clock aria-hidden="true" /> Credenciais verificadas · Bancos reais ainda não habilitados
             </p>
-            <ul>
-              {OPEN_FINANCE_READINESS.missing.map((m) => (
-                <li key={m}>{m}</li>
-              ))}
-            </ul>
+            <p>A Malvo retornou apenas instituições de teste. É necessário habilitar a cobertura real na sua conta Malvo antes de conectar bancos.</p>
           </div>
         )}
       </section>
@@ -55,6 +73,15 @@ export function ConnectionsPage() {
         ))}
       </section>
 
+      {connections.length > 0 && <section className="mt-8">
+        <h2 className="text-lg font-semibold">Suas conexões</h2>
+        <p className="mt-2 text-sm text-muted-foreground">Status confirmado pela Malvo. A importação dos saldos e movimentações para o Kallan ainda está pendente.</p>
+        {connections.map(c => <div key={c.id} className="flex flex-wrap items-center gap-3 border-b border-border py-4">
+          <div className="min-w-0 flex-1"><h3 className="font-medium">{c.institution_name}</h3><p className="text-sm text-muted-foreground">{labels[c.status] ?? c.status}</p></div>
+          <Button variant="ghost" size="icon" aria-label={`Consultar ${c.institution_name}`} title="Consultar status" disabled={busy === c.id} onClick={() => void action(c.id, false)}><RefreshCw className={busy === c.id ? 'animate-spin' : ''} /></Button>
+          {c.status !== 'revoked' && <Button variant="ghost" size="icon" aria-label={`Revogar ${c.institution_name}`} title="Revogar consentimento" disabled={busy === c.id} onClick={() => void action(c.id, true)}><Unplug /></Button>}
+        </div>)}
+      </section>}
       {open && <ConnectFlow onClose={() => setOpen(false)} />}
     </Page>
   );

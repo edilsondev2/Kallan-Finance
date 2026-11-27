@@ -1,3 +1,6 @@
+import { createServerOnlyFn } from '@tanstack/react-start';
+import type { OpenFinanceProvider, OpenFinanceInstitution, ProviderItem } from './provider';
+import { isRealInstitution } from './calculations';
 /**
  * Malvo REST client (server only). Contract from https://docs.malvo.io:
  * POST /auth {clientId, clientSecret} -> apiKey (2h); other calls send X-API-KEY.
@@ -6,12 +9,12 @@
 const BASE = 'https://api.malvo.io';
 let cached: { key: string; expires: number } | null = null;
 
-function credentials() {
+const credentials = createServerOnlyFn(() => {
   const clientId = process.env['Malvo']?.trim();
   const clientSecret = process.env['Malvo2']?.trim();
   if (!clientId || !clientSecret) throw new Error('Credenciais do Open Finance não configuradas.');
   return { clientId, clientSecret };
-}
+});
 
 async function apiKey(force = false): Promise<string> {
   if (!force && cached && cached.expires > Date.now()) return cached.key;
@@ -48,7 +51,7 @@ export async function malvo<T>(path: string, init: { method?: string; body?: unk
   if (!res.ok) {
     let code: string | undefined;
     try { code = ((await res.json()) as { codeDescription?: string }).codeDescription; } catch { /* no body */ }
-    console.error('[malvo] request failed', init.method ?? 'GET', path.split('?')[0], res.status, code);
+    console.error('[malvo] request failed', init.method ?? 'GET', res.status);
     throw new MalvoError(res.status, code);
   }
   if (res.status === 204) return undefined as T;
@@ -56,22 +59,24 @@ export async function malvo<T>(path: string, init: { method?: string; body?: unk
 }
 
 export interface MalvoConnector { id: number; name: string; imageUrl?: string | null; products?: string[]; isSandbox?: boolean; isOpenFinance?: boolean; type?: string; country?: string; health?: { status?: string } | null }
-export interface MalvoItem {
-  id: string; status: string; executionStatus?: string | null; clientUserId?: string | null;
-  connector: { id: number; name: string; isSandbox?: boolean };
-  products?: string[]; lastUpdatedAt?: string | null; consentExpiresAt?: string | null;
-}
 
-type ConnectionStatus = 'preparing' | 'awaiting_authorization' | 'connecting' | 'syncing' | 'verifying' | 'completed' | 'failed' | 'consent_expired' | 'revoked';
-
-/** Only an item the provider reports as UPDATED counts as a completed connection. */
-export function mapItemStatus(item: Pick<MalvoItem, 'status' | 'executionStatus'>): ConnectionStatus {
-  switch (item.status) {
-    case 'UPDATED': return 'completed';
-    case 'UPDATING': return 'syncing';
-    case 'CREATING': case 'LOGIN_IN_PROGRESS': return 'connecting';
-    case 'WAITING_USER_INPUT': return 'awaiting_authorization';
-    case 'OUTDATED': return item.executionStatus === 'CONSENT_EXPIRED' || item.executionStatus === 'CONSENT_REVOKED' ? 'consent_expired' : 'failed';
-    default: return 'failed';
+const PRODUCT_LABELS: Record<string, string> = { ACCOUNTS: 'Contas', TRANSACTIONS: 'Movimentações', CREDIT_CARDS: 'Cartões', INVESTMENTS: 'Investimentos', IDENTITY: 'Dados cadastrais', LOANS: 'Empréstimos' };
+export class MalvoProvider implements OpenFinanceProvider {
+  async listInstitutions(): Promise<OpenFinanceInstitution[]> {
+    const out: OpenFinanceInstitution[] = [];
+    for (let page = 1; ; page++) {
+      const result = await malvo<{ results: MalvoConnector[]; totalPages: number }>(`/connectors?isOpenFinance=true&countries=BR&page=${page}`);
+      for (const c of result.results) {
+        if (isRealInstitution(c)) out.push({ id: String(c.id), name: c.name, sandbox: false, products: (c.products ?? []).map(p => PRODUCT_LABELS[p] ?? p) });
+      }
+      if (page >= result.totalPages) break;
+    }
+    return out;
   }
+  async createConnectToken(userId: string) {
+    const res = await malvo<{ accessToken: string }>('/connect_token', { method: 'POST', body: { options: { clientUserId: userId, avoidDuplicates: true } } });
+    return { connectToken: res.accessToken };
+  }
+  getItem(id: string) { return malvo<ProviderItem>(`/items/${id}`); }
+  async revokeConsent(id: string) { await malvo(`/items/${id}`, { method: 'DELETE' }); }
 }
