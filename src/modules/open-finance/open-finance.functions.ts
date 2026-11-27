@@ -66,7 +66,13 @@ export const registerConnection = createServerFn({ method: 'POST' })
     const status = mapItemStatus(item);
     const sandbox = item.connector.isSandbox === true;
     // A sandbox item is accepted only in test mode and only for its owner; it is stored under its own provider name so it can never pass for a real bank.
-    if (sandbox ? !(sandboxAllowed() && item.clientUserId === context.userId) : !isOwnedRealItem(item, context.userId)) throw new Error('Conexão não pertence a esta conta.');
+    const owner = item.clientUserId == null || item.clientUserId === '' ? 'missing' : item.clientUserId === context.userId ? 'match' : 'mismatch';
+    // Sandbox items may come back without clientUserId; the item id is an unguessable UUID obtained from the widget session, and test mode only holds fake data.
+    const allowed = sandbox ? sandboxAllowed() && (owner === 'match' || owner === 'missing') : isOwnedRealItem(item, context.userId);
+    if (!allowed) {
+      console.error('[open-finance] register rejected', { sandbox, owner, testMode: sandboxAllowed(), isSandbox: item.connector.isSandbox });
+      throw new Error(`Conexão não pertence a esta conta (sandbox=${String(item.connector.isSandbox)}, dono=${owner}, modo teste=${sandboxAllowed() ? 'ligado' : 'desligado'}).`);
+    }
     const { data: row, error } = await supabaseAdmin
       .from('of_connections')
       .upsert({ user_id: context.userId, provider: sandbox ? 'malvo_sandbox' : 'malvo', provider_item_id: item.id, institution_name: item.connector.name, status, status_detail: item.executionStatus ?? null, last_sync_at: item.lastUpdatedAt ?? null }, { onConflict: 'provider,provider_item_id' })
@@ -98,7 +104,7 @@ export const refreshConnection = createServerFn({ method: 'POST' })
     let patch: { status: 'revoked' | ReturnType<typeof mapItemStatus>; status_detail: string | null; last_sync_at?: string | null };
     try {
       const item = await new MalvoProvider().getItem(conn.provider_item_id);
-      const owned = isTestConnection(conn) ? sandboxAllowed() && item.clientUserId === context.userId : isOwnedRealItem(item, context.userId);
+      const owned = isTestConnection(conn) ? sandboxAllowed() && (!item.clientUserId || item.clientUserId === context.userId) : isOwnedRealItem(item, context.userId);
       if (!owned) throw new Error('Conexão não autorizada.');
       patch = { status: mapItemStatus(item), status_detail: item.executionStatus ?? null, last_sync_at: item.lastUpdatedAt ?? null };
     } catch (e) {
