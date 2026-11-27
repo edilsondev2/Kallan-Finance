@@ -44,6 +44,26 @@ function isH3SwallowedErrorBody(body: string): boolean {
   }
 }
 
+// Baseline browser protections. No CSP / X-Frame-Options here on purpose: the Malvo widget, Supabase and the Lovable preview
+// (an iframe) need their origins, so a strict policy must be tuned with them rather than guessed.
+const SECURITY_HEADERS: Record<string, string> = {
+  "x-content-type-options": "nosniff",
+  "referrer-policy": "strict-origin-when-cross-origin",
+  "strict-transport-security": "max-age=31536000; includeSubDomains",
+  "permissions-policy": "camera=(), microphone=(), geolocation=(), payment=(), usb=()",
+  "cross-origin-opener-policy": "same-origin-allow-popups",
+};
+
+function withSecurityHeaders(response: Response): Response {
+  try {
+    const headers = new Headers(response.headers);
+    for (const [k, v] of Object.entries(SECURITY_HEADERS)) if (!headers.has(k)) headers.set(k, v);
+    return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
+  } catch {
+    return response;
+  }
+}
+
 // Hosting compresses every response at the edge. Never compress a body (gzip, brotli,
 // CompressionStream) or set content-encoding here or in a server route: the body gets encoded
 // twice and renders garbled.
@@ -52,7 +72,7 @@ export default {
     try {
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
-      return await normalizeCatastrophicSsrResponse(response);
+      return withSecurityHeaders(await normalizeCatastrophicSsrResponse(response));
     } catch (error) {
       console.error(error);
       return new Response(renderErrorPage(), {
