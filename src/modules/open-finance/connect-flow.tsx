@@ -31,6 +31,7 @@ export function ConnectFlow({ onClose }: { onClose: () => void }) {
   const [result, setResult] = useState<string | null>(null);
   const [testRun, setTestRun] = useState(false);
   const [summary, setSummary] = useState<string | null>(null);
+  const [failDetail, setFailDetail] = useState<string | null>(null);
 
   const institutions = useQuery({ queryKey: ["of-institutions", userId], queryFn: () => listFn(), staleTime: 5 * 60_000 });
   const all = institutions.data ?? [];
@@ -70,8 +71,12 @@ export function ConnectFlow({ onClose }: { onClose: () => void }) {
       setTestRun(row.sandbox);
       const sy = row.sync;
       setSummary(sy ? `Importamos ${sy.accounts} conta(s), ${sy.cards} cartão(ões), ${sy.invoices} fatura(s), ${sy.investments} investimento(s) e ${sy.transactions} movimentação(ões).${sy.warnings.length ? ` Avisos: ${sy.warnings.join("; ")}.` : ""}` : row.syncError);
-      setStep(row.status === "failed" || row.status === "consent_expired" ? "failed" : "done");
-    } catch {
+      const imported = !!sy && sy.accounts + sy.cards + sy.investments + sy.transactions > 0;
+      const bad = (row.status === "failed" && !imported) || row.status === "consent_expired";
+      setFailDetail(bad ? `Situação na Malvo: ${row.providerStatus}${row.providerExecution ? ` / ${row.providerExecution}` : ""}.${row.syncError ? ` ${row.syncError}` : ""}` : null);
+      setStep(bad ? "failed" : "done");
+    } catch (e) {
+      setFailDetail(`Erro ao registrar a conexão: ${e instanceof Error ? e.message : "desconhecido"}.`);
       setStep("failed");
     }
   }
@@ -87,10 +92,11 @@ export function ConnectFlow({ onClose }: { onClose: () => void }) {
         connectorId: Number(picked.id) || undefined,
         includeSandbox: picked.sandbox === true,
         onSuccess: (itemId) => { finished = true; void verify(itemId); },
-        onError: () => { finished = true; setStep("failed"); },
+        onError: () => { finished = true; setFailDetail("A janela da Malvo informou um erro."); setStep("failed"); },
         onClose: () => { if (!finished) setStep("review"); },
       });
-    } catch {
+    } catch (e) {
+      setFailDetail(`Erro ao iniciar a conexão: ${e instanceof Error ? e.message : "desconhecido"}.`);
       setStep("failed");
     }
   }
@@ -244,7 +250,7 @@ export function ConnectFlow({ onClose }: { onClose: () => void }) {
                 <div className="k-cn-done">
                   <AlertTriangle className="mx-auto size-10 text-destructive" aria-hidden="true" />
                   <h2 className="k-cn-h2 center">Não foi possível conectar</h2>
-                  <p>Nenhum dado foi importado. Você pode tentar de novo agora.</p>
+                  <p>Nenhum dado foi importado. Você pode tentar de novo agora.{failDetail ? <small className="mt-2 block break-words text-xs text-muted-foreground">{failDetail}</small> : null}</p>
                   <Button variant="hero" size="lg" className="mt-5 w-full" onClick={() => setStep("review")}>Tentar novamente</Button>
                 </div>
               )}

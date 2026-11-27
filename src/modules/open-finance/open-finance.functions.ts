@@ -75,14 +75,15 @@ export const registerConnection = createServerFn({ method: 'POST' })
     if (error) { console.error('[open-finance] save connection failed', error.code); throw new Error('Não foi possível salvar a conexão.'); }
     let sync: Awaited<ReturnType<typeof syncConnection>> | null = null;
     let syncError: string | null = null;
-    if (status !== 'failed' && status !== 'consent_expired') {
+    // In test mode a sandbox item may report a non-success status right after connecting; still try to import so the data can be checked.
+    if (status === 'completed' || status === 'verifying' || status === 'syncing' || status === 'connecting' || status === 'awaiting_authorization' || (sandbox && status === 'failed')) {
       try { sync = await syncConnection(row); }
       catch (e) {
         if (e instanceof MalvoError && e.code === 'ITEM_CONSENT_TERMINATED') await supabaseAdmin.from('of_connections').update({ status: 'consent_expired', status_detail: e.code }).eq('id', row.id);
         syncError = 'A importação dos dados falhou. Use "Atualizar dados" para tentar de novo.';
       }
     }
-    return { id: row.id, status: row.status, sandbox, sync, syncError };
+    return { id: row.id, status: row.status, sandbox, sync, syncError, providerStatus: item.status, providerExecution: item.executionStatus ?? null };
   });
 
 /** Re-reads the item status from Malvo and imports the latest data. */
