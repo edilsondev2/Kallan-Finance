@@ -66,17 +66,33 @@ export interface MalvoConnector { id: number; name: string; imageUrl?: string | 
 const PRODUCT_LABELS: Record<string, string> = { ACCOUNTS: 'Contas', TRANSACTIONS: 'Movimentações', CREDIT_CARDS: 'Cartões', INVESTMENTS: 'Investimentos', IDENTITY: 'Dados cadastrais', LOANS: 'Empréstimos' };
 export class MalvoProvider implements OpenFinanceProvider {
   async listInstitutions(): Promise<OpenFinanceInstitution[]> {
+    const toProducts = (c: MalvoConnector) => (c.products ?? []).map(p => PRODUCT_LABELS[p] ?? p);
     const out: OpenFinanceInstitution[] = [];
     for (let page = 1; ; page++) {
       const result = await malvo<{ results: MalvoConnector[]; totalPages: number }>(`/connectors?isOpenFinance=true&countries=BR&page=${page}`);
       for (const c of result.results) {
-        const products = (c.products ?? []).map(p => PRODUCT_LABELS[p] ?? p);
-        if (isRealInstitution(c)) out.push({ id: String(c.id), name: c.name, sandbox: false, products });
-        else if (sandboxAllowed() && isTestInstitution(c)) out.push({ id: String(c.id), name: c.name, sandbox: true, products });
+        if (isRealInstitution(c)) out.push({ id: String(c.id), name: c.name, sandbox: false, products: toProducts(c) });
       }
       if (page >= result.totalPages) break;
     }
-    return out.sort((a, b) => Number(a.sandbox) - Number(b.sandbox));
+    if (!sandboxAllowed()) return out;
+
+    // Test mode. Malvo hides sandbox connectors unless the request opts in (docs: GET /connectors `sandbox` / `includeSandbox`),
+    // and the sandbox catalog is not necessarily flagged isOpenFinance, so this query does not filter on it.
+    const tests: { c: MalvoConnector; item: OpenFinanceInstitution }[] = [];
+    try {
+      for (let page = 1; page <= 10; page++) {
+        const result = await malvo<{ results: MalvoConnector[]; totalPages: number }>(`/connectors?sandbox=true&includeSandbox=true&page=${page}`);
+        for (const c of result.results) {
+          if (isTestInstitution(c)) tests.push({ c, item: { id: String(c.id), name: c.name, sandbox: true, products: toProducts(c) } });
+        }
+        if (page >= result.totalPages) break;
+      }
+    } catch {
+      console.error('[malvo] sandbox listing failed');
+    }
+    tests.sort((x, y) => Number(y.c.country === 'BR') - Number(x.c.country === 'BR'));
+    return [...out, ...tests.map(t => t.item)];
   }
   async createConnectToken(userId: string) {
     const res = await malvo<{ accessToken: string }>('/connect_token', { method: 'POST', body: { options: { clientUserId: userId, avoidDuplicates: true } } });

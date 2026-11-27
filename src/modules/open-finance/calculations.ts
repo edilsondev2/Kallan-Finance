@@ -5,7 +5,7 @@ export function isRealInstitution(c: { isSandbox?: boolean; isOpenFinance?: bool
 }
 /** Sandbox connector used only when test mode is enabled on the server. Never counted as a real bank. */
 export function isTestInstitution(c: { isSandbox?: boolean; country?: string }): boolean {
-  return c.isSandbox === true && (c.country === undefined || c.country === 'BR');
+  return c.isSandbox === true;
 }
 export function isOwnedRealItem(item: ProviderItem, userId: string): boolean {
   return item.clientUserId === userId && item.connector.isSandbox === false;

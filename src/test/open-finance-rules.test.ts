@@ -28,7 +28,7 @@ describe('Open Finance uses only real provider confirmation', () => {
     expect(institutionExists(test, '7', true)).toBe(true);
     expect(institutionExists(test, '7', false)).toBe(false);
     expect(isRealInstitution({ isSandbox: true, isOpenFinance: true, country: 'BR', type: 'PERSONAL_BANK' })).toBe(false);
-    expect(isTestInstitution({ isSandbox: true, country: 'BR' })).toBe(true);
+    expect(isTestInstitution({ isSandbox: true, country: 'FI' })).toBe(true);
     expect(isTestInstitution({ isSandbox: false, country: 'BR' })).toBe(false);
   });
 });
