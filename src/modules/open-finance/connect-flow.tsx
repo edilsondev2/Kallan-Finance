@@ -34,6 +34,8 @@ export function ConnectFlow({ onClose }: { onClose: () => void }) {
   const [product, setProduct] = useState<string | null>(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [result, setResult] = useState<string | null>(null);
+  const [testRun, setTestRun] = useState(false);
+  const [summary, setSummary] = useState<string | null>(null);
 
   const institutions = useQuery({ queryKey: ["of-institutions", userId], queryFn: () => listFn(), staleTime: 5 * 60_000 });
   const all = institutions.data ?? [];
@@ -70,6 +72,9 @@ export function ConnectFlow({ onClose }: { onClose: () => void }) {
       const row = await registerFn({ data: { itemId } });
       await qc.invalidateQueries({ queryKey: ["of-connections", userId] });
       setResult(row.status);
+      setTestRun(row.sandbox);
+      const sy = row.sync;
+      setSummary(sy ? `Importamos ${sy.accounts} conta(s), ${sy.cards} cartão(ões), ${sy.invoices} fatura(s), ${sy.investments} investimento(s) e ${sy.transactions} movimentação(ões).${sy.warnings.length ? ` Avisos: ${sy.warnings.join("; ")}.` : ""}` : row.syncError);
       setStep(row.status === "failed" || row.status === "consent_expired" ? "failed" : "done");
     } catch {
       setStep("failed");
@@ -218,7 +223,7 @@ export function ConnectFlow({ onClose }: { onClose: () => void }) {
                   </Button>
                   <p className="k-cn-foot">
                     <ShieldCheck aria-hidden="true" />
-                    {picked.sandbox ? "Ambiente de testes: nenhum dado real será conectado nem salvo. " : ""}Uma janela segura da Malvo vai abrir para você autorizar em {picked.name}. O Kallan nunca pede nem guarda sua senha bancária.
+                    {picked.sandbox ? "Ambiente de testes: os dados importados ficam marcados como \"teste\" e podem ser removidos a qualquer momento. " : ""}Uma janela segura da Malvo vai abrir para você autorizar em {picked.name}. O Kallan nunca pede nem guarda sua senha bancária.
                   </p>
                 </div>
               )}
@@ -234,8 +239,8 @@ export function ConnectFlow({ onClose }: { onClose: () => void }) {
               {step === "done" && (
                 <div className="k-cn-done">
                   <div className="k-orbit"><i /><span><Check /></span></div>
-                  <h2 className="k-cn-h2 center">{result === "sandbox" ? "Teste concluído" : result === "completed" ? "Conexão concluída" : "Conexão em andamento"}</h2>
-                  <p>{result === "sandbox" ? `O teste com ${picked.name} funcionou. Por ser um ambiente de testes, nada foi salvo na sua conta.` : result === "completed" ? `${picked.name} foi conectada e confirmada pelo provedor.` : `A autorização em ${picked.name} foi recebida. O provedor ainda está sincronizando; acompanhe o status na lista de conexões.`}</p>
+                  <h2 className="k-cn-h2 center">{testRun ? "Conexão de teste concluída" : result === "completed" ? "Conexão concluída" : "Conexão em andamento"}</h2>
+                  <p>{(testRun ? `${picked.name} foi conectada em modo de teste: os dados abaixo são de teste, marcados como "teste" no app.` : result === "completed" ? `${picked.name} foi conectada e confirmada pelo provedor.` : `A autorização em ${picked.name} foi recebida. O provedor ainda está sincronizando; acompanhe o status na lista de conexões.`) + (summary ? ` ${summary}` : "")}</p>
                   <Button variant="hero" size="lg" className="mt-5 w-full" onClick={onClose}>Entendi</Button>
                 </div>
               )}
