@@ -97,13 +97,16 @@ export async function probeConnectors(): Promise<OpenFinanceProbe[]> {
   return out;
 }
 
+/** Only https logos are passed to the browser. */
+const img = (c: MalvoConnector): { imageUrl?: string } => (typeof c.imageUrl === 'string' && c.imageUrl.startsWith('https://') ? { imageUrl: c.imageUrl } : {});
+
 export class MalvoProvider implements OpenFinanceProvider {
   async listInstitutions(): Promise<OpenFinanceInstitution[]> {
     const toProducts = (c: MalvoConnector) => (c.products ?? []).map(p => PRODUCT_LABELS[p] ?? p);
     const out: OpenFinanceInstitution[] = [];
     try {
       for (const c of await fetchConnectors('isOpenFinance=true&countries=BR')) {
-        if (isRealInstitution(c)) out.push({ id: String(c.id), name: c.name, sandbox: false, products: toProducts(c) });
+        if (isRealInstitution(c)) out.push({ id: String(c.id), name: c.name, sandbox: false, products: toProducts(c), ...img(c) });
       }
     } catch (e) {
       if (!sandboxAllowed()) throw e; // in test mode a failing real listing must not hide the test institutions
@@ -122,7 +125,7 @@ export class MalvoProvider implements OpenFinanceProvider {
       if (tests.size) break;
     }
     const sorted = [...tests.values()].sort((x, y) => Number(y.country === 'BR') - Number(x.country === 'BR'));
-    return [...out, ...sorted.map(c => ({ id: String(c.id), name: c.name, sandbox: true, products: toProducts(c) }))];
+    return [...out, ...sorted.map(c => ({ id: String(c.id), name: c.name, sandbox: true, products: toProducts(c), ...img(c) }))];
   }
   async createConnectToken(userId: string) {
     const res = await malvo<{ accessToken: string }>('/connect_token', { method: 'POST', body: { options: { clientUserId: userId, avoidDuplicates: true } } });

@@ -14,7 +14,11 @@ type Step = "bank" | "review" | "authorizing" | "verifying" | "done" | "failed";
 
 const norm = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 
-export function InstitutionAvatar({ name, size = 52 }: { name: string; size?: number }) {
+export function InstitutionAvatar({ name, size = 52, imageUrl }: { name: string; size?: number; imageUrl?: string | undefined }) {
+  const [failed, setFailed] = useState(false);
+  if (imageUrl && !failed) {
+    return <span className="k-cn-av k-cn-logo" style={{ width: size, height: size }}><img src={imageUrl} alt="" loading="lazy" referrerPolicy="no-referrer" onError={() => setFailed(true)} /></span>;
+  }
   const words = name.trim().split(/\s+/);
   const initials = ((words[0]?.charAt(0) ?? '') + (words[1]?.charAt(0) ?? '')).toUpperCase();
   return <span className="k-cn-av bg-surface-2 text-foreground" style={{ width: size, height: size, fontSize: size * .34 }} aria-hidden="true">{initials}</span>;
@@ -70,7 +74,7 @@ export function ConnectFlow({ onClose }: { onClose: () => void }) {
     setStep("verifying");
     try {
       const row = await registerFn({ data: { itemId } });
-      await qc.invalidateQueries({ queryKey: ["of-connections", userId] });
+      await Promise.all([qc.invalidateQueries({ queryKey: ["of-connections", userId] }), qc.invalidateQueries({ queryKey: ["finance", userId] })]);
       setResult(row.status);
       setTestRun(row.sandbox);
       const sy = row.sync;
@@ -168,7 +172,7 @@ export function ConnectFlow({ onClose }: { onClose: () => void }) {
           ) : shown.length ? (
             shown.map((inst, i) => (
               <Button variant="ghost" key={inst.id} type="button" className="k-cn-bank k-up" style={{ "--n": Math.min(i, 10) } as CSSProperties} onClick={() => { setPicked(inst); setStep("review"); }}>
-                <InstitutionAvatar name={inst.name}  />
+                <InstitutionAvatar name={inst.name} imageUrl={inst.imageUrl} />
                 <span className="k-cn-bank-body">
                   <b>{inst.name}</b>
                   <small>{inst.sandbox ? "Ambiente de testes · " : ""}{inst.products.join(" · ")}</small>
@@ -209,7 +213,7 @@ export function ConnectFlow({ onClose }: { onClose: () => void }) {
                   <div className="k-cn-link" aria-hidden="true">
                     <span className="k-cn-kmark"><KallanGlyph /></span>
                     <span className="k-cn-line"><i /><ArrowLeftRight /></span>
-                    <InstitutionAvatar name={picked.name} size={64}  />
+                    <InstitutionAvatar name={picked.name} size={64} imageUrl={picked.imageUrl} />
                   </div>
                   <div className="k-cn-card">
                     <Building2 aria-hidden="true" />

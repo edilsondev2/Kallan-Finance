@@ -2438,7 +2438,7 @@
   .k-cn-list {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 12px;
     margin-top: 22px;
   }
   .k-cn-bank {
@@ -2446,10 +2446,11 @@
     align-items: center;
     gap: 16px;
     width: 100%;
-    padding: 12px 14px;
+    padding: 14px 16px;
     border-radius: 22px;
     text-align: left;
-    border: 1px solid transparent;
+    background: var(--surface);
+    border: 1px solid var(--border);
     transition:
       background 0.2s,
       border-color 0.2s,
@@ -2500,6 +2501,18 @@
     box-shadow:
       inset 0 1px 0 rgba(255, 255, 255, 0.18),
       0 8px 20px -10px rgba(124, 77, 255, 0.6);
+  }
+  .k-cn-logo {
+    overflow: hidden;
+    background: #fff;
+    border: 1px solid var(--border);
+    box-shadow: none;
+  }
+  .k-cn-logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    padding: 6px;
   }
   .k-cn-empty {
     padding: 40px 12px;
