@@ -9,14 +9,24 @@ export const listOpenFinanceInstitutions = createServerFn({ method: 'GET' }).mid
   return new MalvoProvider().listInstitutions();
 });
 
+/** Technical detail for the empty state: is test mode on, and what does Malvo return per listing variant. */
+export const openFinanceDiagnostics = createServerFn({ method: 'GET' }).middleware([requireSupabaseAuth]).handler(async () => {
+  const { probeConnectors, sandboxAllowed } = await import('./malvo.server');
+  try {
+    return { sandboxMode: sandboxAllowed(), probes: await probeConnectors() };
+  } catch {
+    return { sandboxMode: sandboxAllowed(), probes: [] };
+  }
+});
+
 export const createConnectToken = createServerFn({ method: 'POST' })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ institutionId: z.string().regex(/^\d+$/) }).parse(d))
   .handler(async ({ data, context }) => {
-    const { MalvoProvider } = await import('./malvo.server');
+    const { MalvoProvider, sandboxAllowed } = await import('./malvo.server');
     const provider = new MalvoProvider();
     const institutions = await provider.listInstitutions();
-    if (!institutionExists(institutions, data.institutionId)) throw new Error('Esta instituição não está habilitada para conexões reais.');
+    if (!institutionExists(institutions, data.institutionId, sandboxAllowed())) throw new Error('Esta instituição não está habilitada para conexões reais.');
     return provider.createConnectToken(context.userId);
   });
 
@@ -27,11 +37,15 @@ export const registerConnection = createServerFn({ method: 'POST' })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ itemId: uuid }).parse(d))
   .handler(async ({ data, context }) => {
-    const { MalvoProvider } = await import('./malvo.server');
+    const { MalvoProvider, sandboxAllowed } = await import('./malvo.server');
     const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
     const item = await new MalvoProvider().getItem(data.itemId);
-    if (!isOwnedRealItem(item, context.userId)) throw new Error('Conexão não pertence a esta conta.');
     const status = mapItemStatus(item);
+    // Test mode: confirm the sandbox item belongs to this user, report the result, and save nothing.
+    if (item.connector.isSandbox === true && sandboxAllowed() && item.clientUserId === context.userId) {
+      return { id: null, status: status === 'failed' || status === 'consent_expired' ? status : ('sandbox' as const) };
+    }
+    if (!isOwnedRealItem(item, context.userId)) throw new Error('Conexão não pertence a esta conta.');
     const { data: row, error } = await supabaseAdmin
       .from('of_connections')
       .upsert({ user_id: context.userId, provider: 'malvo', provider_item_id: item.id, institution_name: item.connector.name, status, status_detail: item.executionStatus ?? null, last_sync_at: item.lastUpdatedAt ?? null }, { onConflict: 'provider,provider_item_id' })

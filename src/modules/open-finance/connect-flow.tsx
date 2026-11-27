@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useUserId } from "@/modules/auth/auth-context";
 import { cn } from "@/lib/utils";
 import type { OpenFinanceInstitution } from "./provider";
-import { createConnectToken, listOpenFinanceInstitutions, registerConnection } from "./open-finance.functions";
+import { createConnectToken, listOpenFinanceInstitutions, openFinanceDiagnostics, registerConnection } from "./open-finance.functions";
 import { openMalvoWidget } from "./widget";
 
 type Step = "bank" | "review" | "authorizing" | "verifying" | "done" | "failed";
@@ -26,6 +26,7 @@ export function ConnectFlow({ onClose }: { onClose: () => void }) {
   const listFn = useServerFn(listOpenFinanceInstitutions);
   const tokenFn = useServerFn(createConnectToken);
   const registerFn = useServerFn(registerConnection);
+  const diagFn = useServerFn(openFinanceDiagnostics);
 
   const [step, setStep] = useState<Step>("bank");
   const [picked, setPicked] = useState<OpenFinanceInstitution | null>(null);
@@ -36,6 +37,8 @@ export function ConnectFlow({ onClose }: { onClose: () => void }) {
 
   const institutions = useQuery({ queryKey: ["of-institutions", userId], queryFn: () => listFn(), staleTime: 5 * 60_000 });
   const all = institutions.data ?? [];
+  const noneListed = institutions.isSuccess && all.length === 0;
+  const diag = useQuery({ queryKey: ["of-diagnostics", userId], queryFn: () => diagFn(), enabled: noneListed, staleTime: 60_000 });
   const products = useMemo(() => [...new Set(all.flatMap((i) => i.products))], [all]);
   const shown = useMemo(() => {
     const q = norm(query.trim());
@@ -82,7 +85,7 @@ export function ConnectFlow({ onClose }: { onClose: () => void }) {
       await openMalvoWidget({
         connectToken,
         connectorId: Number(picked.id) || undefined,
-        includeSandbox: false,
+        includeSandbox: picked.sandbox === true,
         onSuccess: (itemId) => { finished = true; void verify(itemId); },
         onError: () => { finished = true; setStep("failed"); },
         onClose: () => { if (!finished) setStep("review"); },
@@ -171,7 +174,20 @@ export function ConnectFlow({ onClose }: { onClose: () => void }) {
           ) : (
             <div className="k-cn-empty">
               <b>{all.length ? "Nenhuma instituição encontrada." : "Conexões reais ainda não habilitadas."}</b>
-              {all.length ? "Confira o nome ou limpe os filtros." : "A Malvo autenticou suas credenciais, mas retornou apenas instituições de teste. Nenhuma será exibida como banco real."}
+              {all.length ? "Confira o nome ou limpe os filtros." : "Nenhuma instituição real foi retornada pelo provedor para esta conta."}
+              {!all.length && diag.data && (
+                <details className="mt-4 text-left text-xs">
+                  <summary className="cursor-pointer text-center">Detalhes técnicos</summary>
+                  <p className="mt-2">Modo de teste: <b>{diag.data.sandboxMode ? "ligado" : "desligado (secret OPEN_FINANCE_SANDBOX não lido)"}</b></p>
+                  <ul className="mt-2 space-y-1.5">
+                    {diag.data.probes.map((p) => (
+                      <li key={p.label}>
+                        <b>{p.label}:</b> {p.ok ? `${p.total} conectores, ${p.sandbox} de teste${p.sample?.length ? ` (${p.sample.join(", ")})` : ""}` : `falhou (${p.error})`}
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              )}
             </div>
           )}
         </div>
@@ -202,7 +218,7 @@ export function ConnectFlow({ onClose }: { onClose: () => void }) {
                   </Button>
                   <p className="k-cn-foot">
                     <ShieldCheck aria-hidden="true" />
-                    Uma janela segura da Malvo vai abrir para você autorizar em {picked.name}. O Kallan nunca pede nem guarda sua senha bancária.
+                    {picked.sandbox ? "Ambiente de testes: nenhum dado real será conectado nem salvo. " : ""}Uma janela segura da Malvo vai abrir para você autorizar em {picked.name}. O Kallan nunca pede nem guarda sua senha bancária.
                   </p>
                 </div>
               )}
@@ -218,8 +234,8 @@ export function ConnectFlow({ onClose }: { onClose: () => void }) {
               {step === "done" && (
                 <div className="k-cn-done">
                   <div className="k-orbit"><i /><span><Check /></span></div>
-                  <h2 className="k-cn-h2 center">{result === "completed" ? "Conexão concluída" : "Conexão em andamento"}</h2>
-                  <p>{result === "completed" ? `${picked.name} foi conectada e confirmada pelo provedor.` : `A autorização em ${picked.name} foi recebida. O provedor ainda está sincronizando; acompanhe o status na lista de conexões.`}</p>
+                  <h2 className="k-cn-h2 center">{result === "sandbox" ? "Teste concluído" : result === "completed" ? "Conexão concluída" : "Conexão em andamento"}</h2>
+                  <p>{result === "sandbox" ? `O teste com ${picked.name} funcionou. Por ser um ambiente de testes, nada foi salvo na sua conta.` : result === "completed" ? `${picked.name} foi conectada e confirmada pelo provedor.` : `A autorização em ${picked.name} foi recebida. O provedor ainda está sincronizando; acompanhe o status na lista de conexões.`}</p>
                   <Button variant="hero" size="lg" className="mt-5 w-full" onClick={onClose}>Entendi</Button>
                 </div>
               )}

@@ -17,7 +17,7 @@ function load(): Promise<MalvoGlobal> {
   return loading;
 }
 
-export async function openMalvoWidget(o: { connectToken: string; connectorId?: number | undefined; includeSandbox: false; onSuccess: (itemId: string) => void; onError: () => void; onClose: () => void }) {
+export async function openMalvoWidget(o: { connectToken: string; connectorId?: number | undefined; includeSandbox: boolean; onSuccess: (itemId: string) => void; onError: () => void; onClose: () => void }) {
   const M = await load();
   return M.init({
     connectToken: o.connectToken,
