@@ -9,6 +9,16 @@ export const listOpenFinanceInstitutions = createServerFn({ method: 'GET' }).mid
   return new MalvoProvider().listInstitutions();
 });
 
+/** Technical detail for the empty state: is test mode on, and what does Malvo return per listing variant. */
+export const openFinanceDiagnostics = createServerFn({ method: 'GET' }).middleware([requireSupabaseAuth]).handler(async () => {
+  const { probeConnectors, sandboxAllowed } = await import('./malvo.server');
+  try {
+    return { sandboxMode: sandboxAllowed(), probes: await probeConnectors() };
+  } catch {
+    return { sandboxMode: sandboxAllowed(), probes: [] };
+  }
+});
+
 export const createConnectToken = createServerFn({ method: 'POST' })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ institutionId: z.string().regex(/^\d+$/) }).parse(d))

@@ -64,35 +64,65 @@ export async function malvo<T>(path: string, init: { method?: string; body?: unk
 export interface MalvoConnector { id: number; name: string; imageUrl?: string | null; products?: string[]; isSandbox?: boolean; isOpenFinance?: boolean; type?: string; country?: string; health?: { status?: string } | null }
 
 const PRODUCT_LABELS: Record<string, string> = { ACCOUNTS: 'Contas', TRANSACTIONS: 'Movimentações', CREDIT_CARDS: 'Cartões', INVESTMENTS: 'Investimentos', IDENTITY: 'Dados cadastrais', LOANS: 'Empréstimos' };
+const SANDBOX_QUERIES = [
+  { label: 'teste: includeSandbox', q: 'includeSandbox=true' },
+  { label: 'teste: sandbox', q: 'sandbox=true' },
+  { label: 'teste: sem filtros', q: '' },
+] as const;
+
+async function fetchConnectors(query: string, maxPages = 10): Promise<MalvoConnector[]> {
+  const all: MalvoConnector[] = [];
+  for (let page = 1; page <= maxPages; page++) {
+    const result = await malvo<{ results: MalvoConnector[]; totalPages: number }>(`/connectors?${query ? `${query}&` : ''}page=${page}`);
+    all.push(...result.results);
+    if (page >= result.totalPages) break;
+  }
+  return all;
+}
+
+export interface OpenFinanceProbe { label: string; ok: boolean; total?: number; sandbox?: number; sample?: string[]; error?: string }
+
+/** What Malvo answers to each listing variant. No secrets: only counts, a few connector names and a short error. */
+export async function probeConnectors(): Promise<OpenFinanceProbe[]> {
+  const variants = [{ label: 'reais: isOpenFinance + BR', q: 'isOpenFinance=true&countries=BR' }, ...SANDBOX_QUERIES];
+  const out: OpenFinanceProbe[] = [];
+  for (const v of variants) {
+    try {
+      const list = await fetchConnectors(v.q, 3);
+      out.push({ label: v.label, ok: true, total: list.length, sandbox: list.filter(c => c.isSandbox === true).length, sample: list.slice(0, 4).map(c => c.name) });
+    } catch (e) {
+      out.push({ label: v.label, ok: false, error: e instanceof MalvoError ? `HTTP ${e.status}${e.code ? ` ${e.code}` : ''}` : e instanceof Error ? e.message : 'erro' });
+    }
+  }
+  return out;
+}
+
 export class MalvoProvider implements OpenFinanceProvider {
   async listInstitutions(): Promise<OpenFinanceInstitution[]> {
     const toProducts = (c: MalvoConnector) => (c.products ?? []).map(p => PRODUCT_LABELS[p] ?? p);
     const out: OpenFinanceInstitution[] = [];
-    for (let page = 1; ; page++) {
-      const result = await malvo<{ results: MalvoConnector[]; totalPages: number }>(`/connectors?isOpenFinance=true&countries=BR&page=${page}`);
-      for (const c of result.results) {
+    try {
+      for (const c of await fetchConnectors('isOpenFinance=true&countries=BR')) {
         if (isRealInstitution(c)) out.push({ id: String(c.id), name: c.name, sandbox: false, products: toProducts(c) });
       }
-      if (page >= result.totalPages) break;
+    } catch (e) {
+      if (!sandboxAllowed()) throw e; // in test mode a failing real listing must not hide the test institutions
     }
     if (!sandboxAllowed()) return out;
 
-    // Test mode. Malvo hides sandbox connectors unless the request opts in (docs: GET /connectors `sandbox` / `includeSandbox`),
-    // and the sandbox catalog is not necessarily flagged isOpenFinance, so this query does not filter on it.
-    const tests: { c: MalvoConnector; item: OpenFinanceInstitution }[] = [];
-    try {
-      for (let page = 1; page <= 10; page++) {
-        const result = await malvo<{ results: MalvoConnector[]; totalPages: number }>(`/connectors?sandbox=true&includeSandbox=true&page=${page}`);
-        for (const c of result.results) {
-          if (isTestInstitution(c)) tests.push({ c, item: { id: String(c.id), name: c.name, sandbox: true, products: toProducts(c) } });
-        }
-        if (page >= result.totalPages) break;
+    // Test mode. Malvo hides sandbox connectors unless the request opts in (docs: GET /connectors `sandbox` / `includeSandbox`);
+    // the docs do not say which one wins, and a SANDBOX application only sees sandbox connectors, so try each until one returns some.
+    const tests = new Map<number, MalvoConnector>();
+    for (const query of SANDBOX_QUERIES) {
+      try {
+        for (const c of await fetchConnectors(query.q)) if (isTestInstitution(c)) tests.set(c.id, c);
+      } catch {
+        // try the next variant; the failure is logged by malvo()
       }
-    } catch {
-      console.error('[malvo] sandbox listing failed');
+      if (tests.size) break;
     }
-    tests.sort((x, y) => Number(y.c.country === 'BR') - Number(x.c.country === 'BR'));
-    return [...out, ...tests.map(t => t.item)];
+    const sorted = [...tests.values()].sort((x, y) => Number(y.country === 'BR') - Number(x.country === 'BR'));
+    return [...out, ...sorted.map(c => ({ id: String(c.id), name: c.name, sandbox: true, products: toProducts(c) }))];
   }
   async createConnectToken(userId: string) {
     const res = await malvo<{ accessToken: string }>('/connect_token', { method: 'POST', body: { options: { clientUserId: userId, avoidDuplicates: true } } });
