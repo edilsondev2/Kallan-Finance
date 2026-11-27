@@ -205,7 +205,7 @@ function ChatOverlay({ messages, setMessages, convos, setConvos, nextId, origin,
 
   const ready = !finance.isLoading && !settings.isLoading;
   const resolved = useMemo(
-    () => (finance.data ? selectFinanceData(finance.data, settings.data?.show_demo ?? true) : null),
+    () => (finance.data ? selectFinanceData(finance.data, false) : null),
     [finance.data, settings.data?.show_demo],
   );
 

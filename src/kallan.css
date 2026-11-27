@@ -2882,6 +2882,19 @@
       transform: translate3d(-6%, 8px, 0);
     }
   }
+  .k-ai-orb.bare > i {
+    display: none;
+  }
+  .k-ai-orb.bare .glyph {
+    inset: 8%;
+    width: 84%;
+    height: 84%;
+    color: var(--foreground);
+    filter: drop-shadow(0 0 calc(var(--s, 96px) * 0.12) rgba(124, 77, 255, 0.55));
+  }
+  .k-ai-orb.bare .glyph .sp {
+    fill: #b79cff;
+  }
   .k-ai-orb .glyph {
     position: absolute;
     inset: 25%;

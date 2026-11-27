@@ -9,20 +9,11 @@ import { cn } from "@/lib/utils";
 import type { OpenFinanceInstitution } from "./provider";
 import { createConnectToken, listOpenFinanceInstitutions, openFinanceDiagnostics, registerConnection } from "./open-finance.functions";
 import { openMalvoWidget } from "./widget";
+import { InstitutionAvatar } from "@/components/kallan/institution-avatar";
 
 type Step = "bank" | "review" | "authorizing" | "verifying" | "done" | "failed";
 
 const norm = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
-
-export function InstitutionAvatar({ name, size = 52, imageUrl }: { name: string; size?: number; imageUrl?: string | undefined }) {
-  const [failed, setFailed] = useState(false);
-  if (imageUrl && !failed) {
-    return <span className="k-cn-av k-cn-logo" style={{ width: size, height: size }}><img src={imageUrl} alt="" loading="lazy" referrerPolicy="no-referrer" onError={() => setFailed(true)} /></span>;
-  }
-  const words = name.trim().split(/\s+/);
-  const initials = ((words[0]?.charAt(0) ?? '') + (words[1]?.charAt(0) ?? '')).toUpperCase();
-  return <span className="k-cn-av bg-surface-2 text-foreground" style={{ width: size, height: size, fontSize: size * .34 }} aria-hidden="true">{initials}</span>;
-}
 
 export function ConnectFlow({ onClose }: { onClose: () => void }) {
   const userId = useUserId();
