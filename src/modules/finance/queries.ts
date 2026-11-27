@@ -50,7 +50,7 @@ export function useFinanceData(): {
   const refetch = () => void q.refetch();
   if (q.isLoading || settings.isLoading) return { mode: "empty", data: undefined, isLoading: true, isError: false, refetch };
   if (q.isError || !q.data) return { mode: "empty", data: undefined, isLoading: false, isError: true, refetch };
-  return { ...selectFinanceData(q.data, settings.data?.show_demo ?? true), isLoading: false, isError: false, refetch };
+  return { ...selectFinanceData(q.data, false), isLoading: false, isError: false, refetch };
 }
 
 export function useCategories(scope: "personal" | "business" = "personal") {

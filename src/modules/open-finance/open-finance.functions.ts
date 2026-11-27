@@ -9,6 +9,19 @@ export const listOpenFinanceInstitutions = createServerFn({ method: 'GET' }).mid
   return new MalvoProvider().listInstitutions();
 });
 
+let logoCache: { at: number; map: Record<string, string> } | null = null;
+/** name -> logo url for the provider catalog, so Wallet can show the institution's logo. */
+export const getInstitutionLogos = createServerFn({ method: 'GET' }).middleware([requireSupabaseAuth]).handler(async () => {
+  if (logoCache && Date.now() - logoCache.at < 10 * 60_000) return logoCache.map;
+  const map: Record<string, string> = {};
+  try {
+    const { MalvoProvider } = await import('./malvo.server');
+    for (const i of await new MalvoProvider().listInstitutions()) if (i.imageUrl) map[i.name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase()] = i.imageUrl;
+    logoCache = { at: Date.now(), map };
+  } catch { /* logos are cosmetic; fall back to initials */ }
+  return map;
+});
+
 /** Technical detail for the empty state: is test mode on, and what does Malvo return per listing variant. */
 export const openFinanceDiagnostics = createServerFn({ method: 'GET' }).middleware([requireSupabaseAuth]).handler(async () => {
   const { probeConnectors, sandboxAllowed } = await import('./malvo.server');

@@ -4,7 +4,7 @@ import { Page } from "@/components/kallan/page";
 import { Button } from "@/components/ui/button";
 import { ConnectFlow } from "./connect-flow";
 import { ConnectionInspector } from "./inspector";
-import { InstitutionAvatar } from "./connect-flow";
+import { InstitutionAvatar } from "@/components/kallan/institution-avatar";
 import { useSuspenseQuery, useQueryClient } from '@tanstack/react-query';
 import { useServerFn } from '@tanstack/react-start';
 import { useUserId } from '@/modules/auth/auth-context';
