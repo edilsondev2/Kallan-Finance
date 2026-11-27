@@ -1,4 +1,4 @@
-import { useMemo, useState, type CSSProperties, type KeyboardEvent } from "react";
+import { useEffect, useMemo, useState, type CSSProperties, type KeyboardEvent } from "react";
 import { Link } from "@tanstack/react-router";
 import { ArrowDownRight, ArrowUpRight, Bell, ChevronRight, Eye, EyeOff, Landmark, Plus, Sparkles, Target } from "lucide-react";
 import { Page } from "@/components/kallan/page";
@@ -11,7 +11,6 @@ import { useUnreadCount } from "@/components/kallan/app-shell";
 import { Celebrate, readSeen, type CelebrationItem } from "@/components/kallan/celebrate";
 import { useCountUp } from "@/lib/use-count-up";
 import { useKallanChat } from "@/components/kallan/kallan-chat";
-import { KallanOrb } from "@/components/kallan/orb";
 import { useHideValues, useMyProfile } from "@/modules/settings/queries";
 import { cn } from "@/lib/utils";
 import { firstName, formatBRL, formatDate, formatDateTime, formatPercent, greeting, monthLabel, toNumber } from "@/lib/format";
@@ -111,6 +110,17 @@ function HomeCelebration({ data, now }: { data: FinanceData; now: Date }) {
 }
 
 export function Overview() {
+  // Tint the browser's status bar like the hero while the home is open (restored on leave).
+  useEffect(() => {
+    const metas = [...document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]')];
+    const previous = metas.map((m) => m.content);
+    metas.forEach((m) => {
+      m.content = "#17141f";
+    });
+    return () => metas.forEach((m, i) => {
+      m.content = previous[i] ?? m.content;
+    });
+  }, []);
   const { data, mode, isLoading, isError, refetch } = useFinanceData();
   const { data: profile } = useMyProfile();
   const { data: unread = 0 } = useUnreadCount();
@@ -210,6 +220,18 @@ export function Overview() {
         <div className="k-hx" data-tod={tod}>
           <i className="k-hx-orb" aria-hidden="true" />
           <i className="k-hx-orb two" aria-hidden="true" />
+          <svg className="k-hx-waves" viewBox="0 0 400 220" preserveAspectRatio="none" aria-hidden="true">
+            <defs>
+              <linearGradient id="kwg" x1="0" x2="1" y1="0" y2="0">
+                <stop offset="0" stopColor="#7c4dff" stopOpacity="0" />
+                <stop offset="0.5" stopColor="#b79cff" stopOpacity="0.9" />
+                <stop offset="1" stopColor="#7c4dff" stopOpacity="0" />
+              </linearGradient>
+            </defs>
+            <path className="w1" d="M0 150 C 60 110, 120 190, 200 140 S 340 100, 400 150" />
+            <path className="w2" d="M0 170 C 70 130, 130 200, 210 160 S 330 120, 400 170" />
+            <path className="w3" d="M0 125 C 80 90, 140 160, 220 120 S 320 85, 400 125" />
+          </svg>
           <div className="k-hx-top">
             <Link to="/perfil" className="k-hx-id" aria-label="Abrir perfil">
               <span className="k-hx-av">
@@ -293,7 +315,9 @@ export function Overview() {
         <div className={cn("k-ins-strip", insights.length > 1 && "multi")} aria-label="Insights da Kallan">
           {(insights.length ? insights.slice(0, 4) : [null]).map((ins) => (
             <button key={ins?.id ?? "intro"} type="button" className="k-insight" onClick={() => openChat(questionForInsight(ins?.id))}>
-              <KallanOrb size={46} state="idle" />
+              <span className="k-orb">
+                <Sparkles />
+              </span>
               <span className="k-insight-body">
                 <b>{ins ? ins.title : "Kallan Intelligence"}</b>
                 <p>
