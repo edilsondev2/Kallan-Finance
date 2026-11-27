@@ -4,6 +4,7 @@ import { Page } from "@/components/kallan/page";
 import { Button } from "@/components/ui/button";
 import { ConnectFlow } from "./connect-flow";
 import { ConnectionInspector } from "./inspector";
+import { InstitutionAvatar } from "./connect-flow";
 import { useSuspenseQuery, useQueryClient } from '@tanstack/react-query';
 import { useServerFn } from '@tanstack/react-start';
 import { useUserId } from '@/modules/auth/auth-context';
@@ -85,6 +86,7 @@ export function ConnectionsPage() {
         <h2 className="text-lg font-semibold">Suas conexões</h2>
         <p className="mt-2 text-sm text-muted-foreground">Os dados importados aparecem no Início, na Carteira e no Extrato. Conexões de teste ficam marcadas como teste e podem ser removidas.</p>
         {connections.map(c => <div key={c.id} className="flex flex-wrap items-center gap-3 border-b border-border py-4">
+          <InstitutionAvatar name={c.institution_name} size={44} />
           <div className="min-w-0 flex-1">
             <h3 className="flex flex-wrap items-center gap-2 font-medium">{c.institution_name}{c.provider === 'malvo_sandbox' && <span className="inline-flex items-center gap-1 rounded-full border border-border-strong px-2 py-0.5 text-[11px] font-medium text-muted-foreground"><FlaskConical className="size-3" aria-hidden="true" /> teste</span>}</h3>
             <p className="text-sm text-muted-foreground">{labels[c.status] ?? c.status}{c.last_sync_at ? ` · atualizado em ${new Date(c.last_sync_at).toLocaleString('pt-BR')}` : ''}</p>
