@@ -55,3 +55,5 @@ use the editor.
 - Shared labeled inputs and selectors live in `src/components/kallan/field.tsx`; this preserves accessible, consistent forms.
 - RLS must validate the ownership and scope of referenced private records on insert and update; checking only the row's user ID does not protect relationships.
 - Permission regression tests execute actual migrations in in-memory PostgreSQL with test-only auth/storage stubs; this covers direct data-access bypasses without creating application accounts or persisting fixtures.
+
+- Malvo credentials and REST stay in the server-only provider adapter; authenticated functions validate real coverage and item ownership before writes. Why: sandbox connections must never become real financial data.
