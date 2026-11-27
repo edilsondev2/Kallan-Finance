@@ -34,13 +34,13 @@ export const openFinanceDiagnostics = createServerFn({ method: 'GET' }).middlewa
 
 export const createConnectToken = createServerFn({ method: 'POST' })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ institutionId: z.string().regex(/^\d+$/) }).parse(d))
+  .inputValidator((d: unknown) => z.object({ institutionId: z.string().regex(/^\d+$/), origin: z.string().regex(/^https:\/\/[a-z0-9.-]+(:\d+)?$/i).max(200).optional() }).parse(d))
   .handler(async ({ data, context }) => {
     const { MalvoProvider, sandboxAllowed } = await import('./malvo.server');
     const provider = new MalvoProvider();
     const institutions = await provider.listInstitutions();
     if (!institutionExists(institutions, data.institutionId, sandboxAllowed())) throw new Error('Esta instituição não está habilitada para conexões reais.');
-    return provider.createConnectToken(context.userId);
+    return provider.createConnectToken(context.userId, data.origin ? `${data.origin}/open-finance?src=kallan` : undefined);
   });
 
 const uuid = z.string().uuid();

@@ -2483,9 +2483,9 @@
     overflow: auto;
     padding: 10px 22px calc(22px + env(safe-area-inset-bottom, 0px));
     border-radius: 34px;
-    background: var(--surface);
-    border: 1px solid var(--border-strong);
-    box-shadow: 0 -20px 80px -20px rgba(124, 77, 255, 0.35);
+    background: radial-gradient(120% 55% at 50% 0%, color-mix(in srgb, var(--bank, #7c4dff) 30%, transparent), transparent 72%), var(--surface);
+    border: 1px solid color-mix(in srgb, var(--bank, #7c4dff) 38%, var(--border-strong));
+    box-shadow: 0 -24px 90px -18px color-mix(in srgb, var(--bank, #7c4dff) 60%, transparent);
     animation: k-cn-sheet 0.5s cubic-bezier(0.2, 1.1, 0.3, 1) both;
   }
   @keyframes k-cn-sheet {

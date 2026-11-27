@@ -1,4 +1,5 @@
-import { useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useNavigate, useSearch } from "@tanstack/react-router";
 import { Clock, FlaskConical, KeyRound, Landmark, ScanSearch, ShieldCheck, Trash2, Unplug, RefreshCw } from "lucide-react";
 import { Page } from "@/components/kallan/page";
 import { Button } from "@/components/ui/button";
@@ -10,7 +11,7 @@ import { useServerFn } from '@tanstack/react-start';
 import { useUserId } from '@/modules/auth/auth-context';
 import { toast } from 'sonner';
 import { institutionsOptions, connectionsOptions } from './queries';
-import { refreshConnection, revokeConnection } from './open-finance.functions';
+import { refreshConnection, registerConnection, revokeConnection } from './open-finance.functions';
 
 const TRUST = [
   { icon: ShieldCheck, title: "Somente leitura", text: "Contas, saldos, movimentações, faturas e investimentos, conforme o que cada instituição compartilhar." },
@@ -27,6 +28,31 @@ export function ConnectionsPage() {
   const refresh = useServerFn(refreshConnection);
   const revoke = useServerFn(revokeConnection);
   const [busy, setBusy] = useState<string | null>(null);
+  const register = useServerFn(registerConnection);
+  const navigate = useNavigate();
+  const ret = useSearch({ strict: false }) as { itemId?: string; status?: string };
+  const handled = useRef(false);
+  const [finishing, setFinishing] = useState(false);
+  // Back from the provider's page: register the item it reports, then clean the URL.
+  useEffect(() => {
+    if (handled.current || !ret.status) return;
+    handled.current = true;
+    const clear = () => void navigate({ to: "/open-finance", search: {}, replace: true });
+    if (ret.status === "SUCCESS" && ret.itemId) {
+      setFinishing(true);
+      register({ data: { itemId: ret.itemId } })
+        .then(async (row) => {
+          await Promise.all([qc.invalidateQueries({ queryKey: ["of-connections", userId] }), qc.invalidateQueries({ queryKey: ["finance", userId] })]);
+          const s = row.sync;
+          toast.success(s ? `Conexão concluída: ${s.accounts} conta(s), ${s.cards} cartão(ões), ${s.investments} investimento(s), ${s.transactions} movimentação(ões).` : "Conexão registrada.");
+        })
+        .catch((e: unknown) => toast.error(`Não foi possível registrar a conexão: ${e instanceof Error ? e.message : "erro desconhecido"}`))
+        .finally(() => { setFinishing(false); clear(); });
+    } else {
+      if (ret.status === "ERROR") toast.error("A instituição não concluiu a autorização. Tente novamente.");
+      clear();
+    }
+  }, [ret.status, ret.itemId, register, qc, userId, navigate]);
   const [inspecting, setInspecting] = useState<{ id: string; name: string } | null>(null);
   const available = institutions.length > 0;
   async function action(id: string, remove: boolean) {
@@ -48,6 +74,7 @@ export function ConnectionsPage() {
 
   return (
     <Page>
+      {finishing && <p role="status" className="mb-4 rounded-2xl border border-border-strong p-4 text-sm">Finalizando a conexão e importando os dados…</p>}
       <section className="k-cn-hero k-up">
         <i className="k-hx-orb" aria-hidden="true" />
         <div className="k-orbit k-cn-hero-orbit">

@@ -7,7 +7,7 @@ export interface ProviderItem {
 /** Screens use authenticated functions; vendor-specific REST stays in the adapter. */
 export interface OpenFinanceProvider {
   listInstitutions(): Promise<OpenFinanceInstitution[]>;
-  createConnectToken(userId: string): Promise<{ connectToken: string }>;
+  createConnectToken(userId: string, returnUrl?: string): Promise<{ connectToken: string }>;
   getItem(itemId: string): Promise<ProviderItem>;
   revokeConsent(itemId: string): Promise<void>;
 }
