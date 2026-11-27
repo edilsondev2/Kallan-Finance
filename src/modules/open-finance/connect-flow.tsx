@@ -207,7 +207,9 @@ export function ConnectFlow({ onClose }: { onClose: () => void }) {
           ) : (
             <div className="k-cn-empty">
               <b>Nenhuma instituição encontrada.</b>
-              Confira o nome ou limpe os filtros.
+              {demo && query
+                ? "Esta é uma pré-visualização com instituições de exemplo. As instituições reais, como a que você buscou, aparecem quando a conexão com o provedor for ativada."
+                : "Confira o nome ou limpe os filtros."}
             </div>
           )}
         </div>

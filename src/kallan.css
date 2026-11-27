@@ -45,6 +45,7 @@
   .k-main {
     min-width: 0;
     flex: 1;
+    padding-top: env(safe-area-inset-top, 0px);
   }
   @media (min-width: 1024px) {
     .k-shell {
@@ -387,7 +388,7 @@
     isolation: isolate;
     overflow: hidden;
     color: #f5f5f7;
-    margin: 0 calc(-1 * var(--k-gutter)) 0;
+    margin: calc(-1 * env(safe-area-inset-top, 0px)) calc(-1 * var(--k-gutter)) 0;
     padding: calc(env(safe-area-inset-top, 0px) + 14px) var(--k-gutter) 68px;
     border-radius: 0 0 38px 38px;
     background:
@@ -408,20 +409,6 @@
     -webkit-mask-size: 8px 8px;
     mask-size: 8px 8px;
     opacity: 0.2;
-  }
-  .k-hx::after {
-    content: "";
-    position: absolute;
-    z-index: -1;
-    right: -90px;
-    top: 70px;
-    width: 300px;
-    height: 300px;
-    border-radius: 50%;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow:
-      0 0 0 30px rgba(255, 255, 255, 0.025),
-      0 0 0 62px rgba(255, 255, 255, 0.018);
   }
   @media (min-width: 1024px) {
     .k-hx {
@@ -1129,7 +1116,7 @@
     flex-direction: column;
     padding-top: env(safe-area-inset-top, 0px);
     overflow: hidden;
-    animation: k-chat-in 0.28s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    animation: k-chat-reveal 0.7s cubic-bezier(0.25, 0.8, 0.2, 1) backwards;
   }
   @keyframes k-chat-in {
     from {
@@ -1983,14 +1970,6 @@
   }
   .k-hx[data-tod="night"] {
     --k-glow: #2b2150;
-  }
-  .k-hx::after {
-    animation: k-hxring 9s ease-in-out infinite alternate;
-  }
-  @keyframes k-hxring {
-    to {
-      transform: scale(1.1) rotate(8deg);
-    }
   }
   .k-hx-orb {
     position: absolute;
@@ -2858,6 +2837,139 @@
     color: var(--muted-foreground);
   }
 
+  /* ===== hero waves, opening of Kallan Intelligence, status bar band ===== */
+  .k-hx-waves {
+    position: absolute;
+    z-index: -1;
+    left: -10%;
+    bottom: 0;
+    width: 120%;
+    height: 58%;
+    pointer-events: none;
+    fill: none;
+    stroke: url(#kwg);
+    stroke-width: 1.4;
+    stroke-linecap: round;
+    opacity: 0.55;
+  }
+  .k-hx-waves path {
+    animation: k-wave 14s ease-in-out infinite alternate;
+  }
+  .k-hx-waves .w2 {
+    animation-duration: 19s;
+    animation-direction: alternate-reverse;
+    opacity: 0.7;
+  }
+  .k-hx-waves .w3 {
+    animation-duration: 24s;
+    opacity: 0.45;
+  }
+  @keyframes k-wave {
+    to {
+      transform: translate3d(-6%, 8px, 0);
+    }
+  }
+  .k-ai-orb .glyph {
+    position: absolute;
+    inset: 25%;
+    width: 50%;
+    height: 50%;
+    color: #fff;
+    stroke-width: 3.4;
+    filter: drop-shadow(0 0 calc(var(--s, 96px) * 0.08) rgba(255, 255, 255, 0.75));
+  }
+  .k-ai-orb .glyph .sp {
+    fill: #fff;
+  }
+  .k-chat-splash {
+    position: absolute;
+    inset: 0;
+    z-index: 6;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    pointer-events: none;
+    color: #f5f5f7;
+    background:
+      radial-gradient(circle at var(--ox, 50%) var(--oy, 100%), rgba(124, 77, 255, 0.55), transparent 55%),
+      radial-gradient(circle at 50% 42%, #2b1a63 0%, #0d0820 58%, #050506 100%);
+    animation: k-splash 1.25s cubic-bezier(0.4, 0, 0.2, 1) both;
+  }
+  @keyframes k-splash {
+    0%,
+    58% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+      visibility: hidden;
+    }
+  }
+  .k-chat-splash .k-ai-orb {
+    animation: k-pop 0.8s cubic-bezier(0.3, 1.4, 0.5, 1) 0.15s both;
+    margin-bottom: 22px;
+  }
+  .k-chat-splash b {
+    font: 700 22px var(--font-display);
+    letter-spacing: 0.42em;
+    padding-left: 0.42em;
+    animation: k-up 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) 0.35s backwards;
+  }
+  .k-chat-splash small {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.5em;
+    padding-left: 0.5em;
+    color: #b79cff;
+    animation: k-up 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) 0.5s backwards;
+  }
+  .k-splash-rings {
+    position: absolute;
+    left: 50%;
+    top: 42%;
+    width: 0;
+    height: 0;
+  }
+  .k-splash-rings i {
+    position: absolute;
+    left: -90px;
+    top: -90px;
+    width: 180px;
+    height: 180px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(183, 156, 255, 0.55);
+    animation: k-splash-ring 1.2s cubic-bezier(0.2, 0.7, 0.3, 1) both;
+  }
+  .k-splash-rings i:nth-child(2) {
+    animation-delay: 0.18s;
+  }
+  .k-splash-rings i:nth-child(3) {
+    animation-delay: 0.36s;
+  }
+  @keyframes k-splash-ring {
+    from {
+      transform: scale(0.4);
+      opacity: 0.9;
+    }
+    to {
+      transform: scale(5.5);
+      opacity: 0;
+    }
+  }
+  .k-chat-col {
+    animation: k-up 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) 0.7s backwards;
+  }
+  @keyframes k-chat-reveal {
+    from {
+      clip-path: circle(0px at var(--ox, 50%) var(--oy, 100%));
+    }
+    to {
+      clip-path: circle(170vmax at var(--ox, 50%) var(--oy, 100%));
+    }
+  }
+
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -2884,7 +2996,16 @@
   .k-hx-orb {
     display: none;
   }
-  .k-hx::after,
+  .k-chat {
+    animation: k-chat-in 0.2s both !important;
+  }
+  .k-chat-splash {
+    display: none;
+  }
+  .k-chat-col {
+    animation: none !important;
+  }
+  .k-hx-waves path,
   .k-hx-pill::after {
     animation: none !important;
   }
@@ -2934,4 +3055,24 @@
   .k-page {
     animation: none !important;
   }
+}
+
+/* In an installed (standalone) app the status bar sits over the page: keep it dark except where the hero is. */
+body::before {
+  content: "";
+  position: fixed;
+  z-index: 100;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: env(safe-area-inset-top, 0px);
+  background: #050506;
+  pointer-events: none;
+}
+body:has(.k-home)::before {
+  display: none;
+}
+:root[data-theme="dark"] body::before,
+.dark body::before {
+  background: var(--background);
 }

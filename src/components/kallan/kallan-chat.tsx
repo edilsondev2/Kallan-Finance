@@ -39,9 +39,21 @@ export function KallanChatProvider({ children }: { children: ReactNode }) {
   const [messages, setMessages] = useState<Msg[]>([]);
   const [convos, setConvos] = useState<Convo[]>([]);
   const nextId = useRef(Date.now());
+  const lastPress = useRef<{ x: number; y: number } | null>(null);
+  const [origin, setOrigin] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+
+  // Remember where the person touched so the opening animation can expand from that point.
+  useEffect(() => {
+    const onDown = (e: PointerEvent) => {
+      lastPress.current = { x: e.clientX, y: e.clientY };
+    };
+    window.addEventListener("pointerdown", onDown, { capture: true, passive: true });
+    return () => window.removeEventListener("pointerdown", onDown, { capture: true });
+  }, []);
 
   const openChat = useCallback((question?: string) => {
     if (question) setPending(question);
+    setOrigin(lastPress.current ?? { x: window.innerWidth / 2, y: window.innerHeight - 48 });
     setOpen(true);
   }, []);
   const closeChat = useCallback(() => setOpen(false), []);
@@ -57,6 +69,7 @@ export function KallanChatProvider({ children }: { children: ReactNode }) {
           convos={convos}
           setConvos={setConvos}
           nextId={nextId}
+          origin={origin}
           pending={pending}
           clearPending={() => setPending(null)}
           onClose={closeChat}
@@ -168,12 +181,13 @@ type OverlayProps = {
   convos: Convo[];
   setConvos: React.Dispatch<React.SetStateAction<Convo[]>>;
   nextId: React.MutableRefObject<number>;
+  origin: { x: number; y: number };
   pending: string | null;
   clearPending: () => void;
   onClose: () => void;
 };
 
-function ChatOverlay({ messages, setMessages, convos, setConvos, nextId, pending, clearPending, onClose }: OverlayProps) {
+function ChatOverlay({ messages, setMessages, convos, setConvos, nextId, origin, pending, clearPending, onClose }: OverlayProps) {
   const userId = useUserId();
   const finance = useQuery(financeQueryOptions(userId));
   const settings = useSettings();
@@ -291,14 +305,24 @@ function ChatOverlay({ messages, setMessages, convos, setConvos, nextId, pending
   }
 
   return (
-    <div className="k-chat" role="dialog" aria-modal="true" aria-label="Kallan Intelligence">
+    <div className="k-chat" role="dialog" aria-modal="true" aria-label="Kallan Intelligence" style={{ "--ox": `${origin.x}px`, "--oy": `${origin.y}px` } as React.CSSProperties}>
+      <div className="k-chat-splash" aria-hidden="true">
+        <span className="k-splash-rings">
+          <i />
+          <i />
+          <i />
+        </span>
+        <KallanOrb size={150} state="speaking" glyph />
+        <b>KALLAN</b>
+        <small>INTELLIGENCE</small>
+      </div>
       <div className="k-px" aria-hidden="true" />
       <div className="k-chat-col">
         <header className="k-chat-head">
           <button type="button" className="k-icon-btn" onClick={onClose} aria-label="Fechar conversa">
             <X />
           </button>
-          {started && <KallanOrb size={38} state={orbState} className="k-head-orb" />}
+          {started && <KallanOrb size={40} state={orbState} className="k-head-orb" glyph />}
           <button type="button" className="k-icon-btn" onClick={() => setSheet("history")} aria-label="Conversas anteriores">
             <Clock />
           </button>
@@ -307,7 +331,7 @@ function ChatOverlay({ messages, setMessages, convos, setConvos, nextId, pending
         <div className="k-chat-scroll" ref={scrollRef}>
           {!started && (
             <div className="k-chat-start">
-              <KallanOrb size={120} state={orbState} />
+              <KallanOrb size={132} state={orbState} glyph />
               <h2>{name ? `Olá, ${name}` : "Olá"}</h2>
               <p>Como posso te ajudar?</p>
             </div>
