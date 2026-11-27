@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { createPortal } from "react-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { AlertTriangle, ArrowLeft, ArrowLeftRight, Building2, Check, ChevronRight, Loader2, Search, ShieldCheck, SlidersHorizontal, X } from "lucide-react";
@@ -12,6 +13,18 @@ import { openMalvoWidget } from "./widget";
 import { InstitutionAvatar } from "@/components/kallan/institution-avatar";
 
 type Step = "bank" | "review" | "authorizing" | "verifying" | "done" | "failed";
+
+/** Brand light for the connect sheet. Falls back to the Kallan violet. */
+const BRANDS: [string, string][] = [
+  ["nubank", "#8a05be"], ["banco do brasil", "#ffcc00"], ["itau", "#ec7000"], ["bradesco", "#cc092f"], ["santander", "#ec0000"],
+  ["caixa", "#0070af"], ["inter", "#ff7a00"], ["c6", "#8d8d95"], ["btg", "#1a4fa3"], ["sicoob", "#00a39a"], ["sicredi", "#3fa535"],
+  ["picpay", "#21c25e"], ["mercado pago", "#00b1ea"], ["xp", "#e8c100"], ["safra", "#1d3f8a"], ["original", "#2bb24c"], ["neon", "#00d6d6"], ["next", "#00ff5f"], ["banrisul", "#1f5fb4"], ["bnb", "#e2231a"],
+];
+export function brandColor(name: string) {
+  const n = name.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  const hit = BRANDS.find(([k]) => new RegExp(`(^|[^a-z0-9])${k}([^a-z0-9]|$)`).test(n));
+  return hit?.[1] ?? "#7c4dff";
+}
 
 const norm = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 
@@ -44,6 +57,7 @@ export function ConnectFlow({ onClose }: { onClose: () => void }) {
   }, [all, query, product]);
 
   const sheetOpen = step !== "bank";
+  const bank = picked ? brandColor(picked.name) : "#7c4dff";
   const busy = step === "authorizing" || step === "verifying";
   const back = () => {
     if (busy) return;
@@ -85,7 +99,7 @@ export function ConnectFlow({ onClose }: { onClose: () => void }) {
     if (!picked) return;
     setStep("authorizing");
     try {
-      const { connectToken } = await tokenFn({ data: { institutionId: picked.id } });
+      const { connectToken } = await tokenFn({ data: { institutionId: picked.id, origin: window.location.protocol === "https:" ? window.location.origin : undefined } });
       let finished = false;
       await openMalvoWidget({
         connectToken,
@@ -93,7 +107,8 @@ export function ConnectFlow({ onClose }: { onClose: () => void }) {
         includeSandbox: picked.sandbox === true,
         onSuccess: (itemId) => { finished = true; void verify(itemId); },
         onError: () => { finished = true; setFailDetail("A janela da Malvo informou um erro."); setStep("failed"); },
-        onClose: () => { if (!finished) setStep("review"); },
+        // onClose also fires on success, and may arrive just before onSuccess: wait a moment before falling back to the review card.
+        onClose: () => { window.setTimeout(() => { if (!finished) setStep("review"); }, 2500); },
       });
     } catch (e) {
       setFailDetail(`Erro ao iniciar a conexão: ${e instanceof Error ? e.message : "desconhecido"}.`);
@@ -199,8 +214,8 @@ export function ConnectFlow({ onClose }: { onClose: () => void }) {
         </div>
       </div>
 
-      {sheetOpen && picked && (
-        <div className="k-cn-wrap" onClick={(e) => { if (e.target === e.currentTarget) back(); }}>
+      {sheetOpen && picked && createPortal(
+        <div className="k-cn-wrap" style={{ "--bank": bank, zIndex: 210 } as CSSProperties} onClick={(e) => { if (e.target === e.currentTarget) back(); }}>
           <div className="k-cn-sheet" role="dialog" aria-modal="true" aria-label={sheetLabel}>
             <div className="k-grab" />
             <div key={step} className="k-swap">
@@ -256,7 +271,8 @@ export function ConnectFlow({ onClose }: { onClose: () => void }) {
               )}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );

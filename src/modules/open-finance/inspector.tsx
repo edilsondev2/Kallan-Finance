@@ -1,3 +1,4 @@
+import { createPortal } from "react-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { AlertTriangle, Check, Loader2, X } from "lucide-react";
@@ -31,8 +32,8 @@ export function ConnectionInspector({ connectionId, name, onClose }: { connectio
   const inspectFn = useServerFn(inspectConnection);
   const q = useQuery({ queryKey: ["of-inspect", connectionId], queryFn: () => inspectFn({ data: { connectionId } }), staleTime: 0, gcTime: 0, retry: false });
   const d = q.data;
-  return (
-    <div className="k-cn-wrap" style={{ zIndex: 95 }} onClick={(e) => e.target === e.currentTarget && onClose()}>
+  return createPortal(
+    <div className="k-cn-wrap" style={{ zIndex: 210 }} onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="k-cn-sheet" role="dialog" aria-modal="true" aria-label={`Dados recebidos de ${name}`}>
         <div className="flex items-center justify-between">
           <h2 className="k-cn-h2" style={{ margin: "10px 0 6px" }}>Dados recebidos de {name}</h2>
@@ -73,6 +74,7 @@ export function ConnectionInspector({ connectionId, name, onClose }: { connectio
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

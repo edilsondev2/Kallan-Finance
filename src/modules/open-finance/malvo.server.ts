@@ -127,8 +127,19 @@ export class MalvoProvider implements OpenFinanceProvider {
     const sorted = [...tests.values()].sort((x, y) => Number(y.country === 'BR') - Number(x.country === 'BR'));
     return [...out, ...sorted.map(c => ({ id: String(c.id), name: c.name, sandbox: true, products: toProducts(c), ...img(c) }))];
   }
-  async createConnectToken(userId: string) {
-    const res = await malvo<{ accessToken: string }>('/connect_token', { method: 'POST', body: { options: { clientUserId: userId, avoidDuplicates: true } } });
+  async createConnectToken(userId: string, returnUrl?: string) {
+    const base = { clientUserId: userId, avoidDuplicates: true };
+    // oauthRedirectUri brings the user back to the app (with itemId and status in the URL) when the authorization finishes in a separate
+    // browser window and the widget callbacks never reach the app. If Malvo rejects it, fall back to the callbacks only.
+    if (returnUrl) {
+      try {
+        const res = await malvo<{ accessToken: string }>('/connect_token', { method: 'POST', body: { options: { ...base, oauthRedirectUri: returnUrl } } });
+        return { connectToken: res.accessToken };
+      } catch (e) {
+        if (!(e instanceof MalvoError) || e.status >= 500) throw e;
+      }
+    }
+    const res = await malvo<{ accessToken: string }>('/connect_token', { method: 'POST', body: { options: base } });
     return { connectToken: res.accessToken };
   }
   getItem(id: string) { return malvo<ProviderItem>(`/items/${id}`); }
