@@ -82,7 +82,7 @@ export function ConnectFlow({ onClose }: { onClose: () => void }) {
       await openMalvoWidget({
         connectToken,
         connectorId: Number(picked.id) || undefined,
-        includeSandbox: false,
+        includeSandbox: picked.sandbox === true,
         onSuccess: (itemId) => { finished = true; void verify(itemId); },
         onError: () => { finished = true; setStep("failed"); },
         onClose: () => { if (!finished) setStep("review"); },
@@ -202,7 +202,7 @@ export function ConnectFlow({ onClose }: { onClose: () => void }) {
                   </Button>
                   <p className="k-cn-foot">
                     <ShieldCheck aria-hidden="true" />
-                    Uma janela segura da Malvo vai abrir para você autorizar em {picked.name}. O Kallan nunca pede nem guarda sua senha bancária.
+                    {picked.sandbox ? "Ambiente de testes: nenhum dado real será conectado nem salvo. " : ""}Uma janela segura da Malvo vai abrir para você autorizar em {picked.name}. O Kallan nunca pede nem guarda sua senha bancária.
                   </p>
                 </div>
               )}
@@ -218,8 +218,8 @@ export function ConnectFlow({ onClose }: { onClose: () => void }) {
               {step === "done" && (
                 <div className="k-cn-done">
                   <div className="k-orbit"><i /><span><Check /></span></div>
-                  <h2 className="k-cn-h2 center">{result === "completed" ? "Conexão concluída" : "Conexão em andamento"}</h2>
-                  <p>{result === "completed" ? `${picked.name} foi conectada e confirmada pelo provedor.` : `A autorização em ${picked.name} foi recebida. O provedor ainda está sincronizando; acompanhe o status na lista de conexões.`}</p>
+                  <h2 className="k-cn-h2 center">{result === "sandbox" ? "Teste concluído" : result === "completed" ? "Conexão concluída" : "Conexão em andamento"}</h2>
+                  <p>{result === "sandbox" ? `O teste com ${picked.name} funcionou. Por ser um ambiente de testes, nada foi salvo na sua conta.` : result === "completed" ? `${picked.name} foi conectada e confirmada pelo provedor.` : `A autorização em ${picked.name} foi recebida. O provedor ainda está sincronizando; acompanhe o status na lista de conexões.`}</p>
                   <Button variant="hero" size="lg" className="mt-5 w-full" onClick={onClose}>Entendi</Button>
                 </div>
               )}

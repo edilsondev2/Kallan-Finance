@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isRealInstitution, isOwnedRealItem, mapItemStatus, institutionExists } from '@/modules/open-finance/calculations';
+import { isRealInstitution, isTestInstitution, isOwnedRealItem, mapItemStatus, institutionExists } from '@/modules/open-finance/calculations';
 describe('Open Finance uses only real provider confirmation', () => {
   it('excludes sandbox institutions from real coverage', () => {
     expect(isRealInstitution({ isSandbox: true, isOpenFinance: true, country: 'BR', type: 'PERSONAL_BANK' })).toBe(false);
@@ -22,5 +22,13 @@ describe('Open Finance uses only real provider confirmation', () => {
     expect(institutionExists([], '7')).toBe(false);
     expect(institutionExists([{ id: '7', name: 'test', products: [], sandbox: true }], '7')).toBe(false);
     expect(institutionExists([{ id: '8', name: 'real', products: [], sandbox: false }], '8')).toBe(true);
+  });
+  it('allows sandbox institutions only when test mode is on, and never as real', () => {
+    const test = [{ id: '7', name: 'test', products: [], sandbox: true }];
+    expect(institutionExists(test, '7', true)).toBe(true);
+    expect(institutionExists(test, '7', false)).toBe(false);
+    expect(isRealInstitution({ isSandbox: true, isOpenFinance: true, country: 'BR', type: 'PERSONAL_BANK' })).toBe(false);
+    expect(isTestInstitution({ isSandbox: true, country: 'BR' })).toBe(true);
+    expect(isTestInstitution({ isSandbox: false, country: 'BR' })).toBe(false);
   });
 });

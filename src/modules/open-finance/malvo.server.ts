@@ -1,6 +1,6 @@
 import { createServerOnlyFn } from '@tanstack/react-start';
 import type { OpenFinanceProvider, OpenFinanceInstitution, ProviderItem } from './provider';
-import { isRealInstitution } from './calculations';
+import { isRealInstitution, isTestInstitution } from './calculations';
 /**
  * Malvo REST client (server only). Contract from https://docs.malvo.io:
  * POST /auth {clientId, clientSecret} -> apiKey (2h); other calls send X-API-KEY.
@@ -32,6 +32,9 @@ async function apiKey(force = false): Promise<string> {
   cached = { key: body.apiKey, expires: Date.now() + 100 * 60_000 };
   return body.apiKey;
 }
+
+/** Test mode: set the server secret OPEN_FINANCE_SANDBOX=true to list Malvo's sandbox institutions. Off by default. */
+export const sandboxAllowed = () => process.env['OPEN_FINANCE_SANDBOX']?.trim() === 'true';
 
 export class MalvoError extends Error {
   constructor(public status: number, public code: string | undefined) {
@@ -67,11 +70,13 @@ export class MalvoProvider implements OpenFinanceProvider {
     for (let page = 1; ; page++) {
       const result = await malvo<{ results: MalvoConnector[]; totalPages: number }>(`/connectors?isOpenFinance=true&countries=BR&page=${page}`);
       for (const c of result.results) {
-        if (isRealInstitution(c)) out.push({ id: String(c.id), name: c.name, sandbox: false, products: (c.products ?? []).map(p => PRODUCT_LABELS[p] ?? p) });
+        const products = (c.products ?? []).map(p => PRODUCT_LABELS[p] ?? p);
+        if (isRealInstitution(c)) out.push({ id: String(c.id), name: c.name, sandbox: false, products });
+        else if (sandboxAllowed() && isTestInstitution(c)) out.push({ id: String(c.id), name: c.name, sandbox: true, products });
       }
       if (page >= result.totalPages) break;
     }
-    return out;
+    return out.sort((a, b) => Number(a.sandbox) - Number(b.sandbox));
   }
   async createConnectToken(userId: string) {
     const res = await malvo<{ accessToken: string }>('/connect_token', { method: 'POST', body: { options: { clientUserId: userId, avoidDuplicates: true } } });
