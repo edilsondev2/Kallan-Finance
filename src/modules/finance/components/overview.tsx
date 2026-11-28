@@ -1,3 +1,4 @@
+import { MerchantLogo } from "@/components/kallan/merchant-logo";
 import { useEffect, useMemo, useState, type CSSProperties, type KeyboardEvent } from "react";
 import { Link } from "@tanstack/react-router";
 import { ArrowDownRight, ArrowUpRight, Bell, ChevronRight, Eye, EyeOff, Landmark, Plus, Sparkles, Target } from "lucide-react";
@@ -476,7 +477,7 @@ export function Overview() {
                 const income = t.direction === "in";
                 return (
                   <div key={t.id} className="k-tx">
-                    <CategoryIcon icon={cat?.icon} color={cat?.color} className="size-[42px] rounded-[14px]" />
+                    <MerchantLogo description={t.description} size={42} className="rounded-[14px]" fallback={<CategoryIcon icon={cat?.icon} color={cat?.color} className="size-[42px] rounded-[14px]" />} />
                     <div className="k-tx-main">
                       <div className="k-tx-name">{t.description}</div>
                       <div className="k-tx-meta">
