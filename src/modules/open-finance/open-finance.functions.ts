@@ -36,11 +36,16 @@ export const createConnectToken = createServerFn({ method: 'POST' })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ institutionId: z.string().regex(/^\d+$/), origin: z.string().regex(/^https:\/\/[a-z0-9.-]+(:\d+)?$/i).max(200).optional() }).parse(d))
   .handler(async ({ data, context }) => {
+    (await import('@/lib/rate-limit.server')).rateLimit(`createConnectToken:${context.userId}`, 8, 60000);
     const { MalvoProvider, sandboxAllowed } = await import('./malvo.server');
     const provider = new MalvoProvider();
     const institutions = await provider.listInstitutions();
     if (!institutionExists(institutions, data.institutionId, sandboxAllowed())) throw new Error('Esta instituição não está habilitada para conexões reais.');
-    return provider.createConnectToken(context.userId, data.origin ? `${data.origin}/open-finance?src=kallan` : undefined);
+    const { getRequest } = await import('@tanstack/react-start/server');
+    const host = getRequest()?.headers.get('x-forwarded-host') ?? getRequest()?.headers.get('host') ?? '';
+    // The return address must be this app's own origin: never a caller-chosen site.
+    const returnUrl = data.origin && new URL(data.origin).host === host ? `${data.origin}/open-finance?src=kallan` : undefined;
+    return provider.createConnectToken(context.userId, returnUrl);
   });
 
 const uuid = z.string().uuid();
@@ -59,6 +64,7 @@ export const registerConnection = createServerFn({ method: 'POST' })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ itemId: uuid }).parse(d))
   .handler(async ({ data, context }) => {
+    (await import('@/lib/rate-limit.server')).rateLimit(`registerConnection:${context.userId}`, 10, 60000);
     const { MalvoProvider, MalvoError, sandboxAllowed } = await import('./malvo.server');
     const { syncConnection } = await import('./sync.server');
     const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
@@ -97,6 +103,7 @@ export const refreshConnection = createServerFn({ method: 'POST' })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ connectionId: uuid }).parse(d))
   .handler(async ({ data, context }) => {
+    (await import('@/lib/rate-limit.server')).rateLimit(`refreshConnection:${context.userId}`, 8, 60000);
     const { MalvoProvider, MalvoError, sandboxAllowed } = await import('./malvo.server');
     const { syncConnection, isTestConnection } = await import('./sync.server');
     const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
@@ -129,6 +136,7 @@ export const inspectConnection = createServerFn({ method: 'POST' })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ connectionId: uuid }).parse(d))
   .handler(async ({ data, context }) => {
+    (await import('@/lib/rate-limit.server')).rateLimit(`inspectConnection:${context.userId}`, 10, 60000);
     const { inspectConnection: inspect } = await import('./sync.server');
     try { return await inspect(await loadConnection(data.connectionId, context.userId)); }
     catch (e) { console.error('[open-finance] inspect failed', e instanceof Error ? e.message : 'erro'); throw new Error('Não foi possível conferir os dados agora.'); }
@@ -138,6 +146,7 @@ export const revokeConnection = createServerFn({ method: 'POST' })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ connectionId: uuid }).parse(d))
   .handler(async ({ data, context }) => {
+    (await import('@/lib/rate-limit.server')).rateLimit(`revokeConnection:${context.userId}`, 10, 60000);
     const { MalvoProvider, MalvoError } = await import('./malvo.server');
     const { deleteConnectionData, isTestConnection } = await import('./sync.server');
     const { supabaseAdmin } = await import('@/integrations/supabase/client.server');
