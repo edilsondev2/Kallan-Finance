@@ -52,12 +52,16 @@ const SECURITY_HEADERS: Record<string, string> = {
   "strict-transport-security": "max-age=31536000; includeSubDomains",
   "permissions-policy": "camera=(), microphone=(), geolocation=(), payment=(), usb=()",
   "cross-origin-opener-policy": "same-origin-allow-popups",
+  // Clickjacking, <base>/<object> injection and form hijacking. Embedding is allowed only for the app itself and the Lovable editor preview.
+  "content-security-policy": "object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self' https://*.lovable.app https://*.lovable.dev https://*.lovableproject.com",
 };
 
-function withSecurityHeaders(response: Response): Response {
+function withSecurityHeaders(response: Response, request: Request): Response {
   try {
     const headers = new Headers(response.headers);
     for (const [k, v] of Object.entries(SECURITY_HEADERS)) if (!headers.has(k)) headers.set(k, v);
+    // Responses of server functions carry private financial data: never let a browser or proxy cache them.
+    if (new URL(request.url).pathname.startsWith("/_serverFn")) headers.set("cache-control", "no-store");
     return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
   } catch {
     return response;
@@ -72,7 +76,7 @@ export default {
     try {
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
-      return withSecurityHeaders(await normalizeCatastrophicSsrResponse(response));
+      return withSecurityHeaders(await normalizeCatastrophicSsrResponse(response), request);
     } catch (error) {
       console.error(error);
       return new Response(renderErrorPage(), {
